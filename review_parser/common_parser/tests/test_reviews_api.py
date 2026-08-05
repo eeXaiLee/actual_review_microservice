@@ -1,50 +1,10 @@
-from datetime import datetime, timedelta
-
 from rest_framework.test import APITestCase
 
-from common_parser.models import Branch, Organization, Review, BranchIPMapping
+from .base import ReviewsFixtureMixin
 
 
-class ReviewsApiTests(APITestCase):
-    @classmethod
-    def setUpTestData(cls):
-        org = Organization.objects.create(inn="123456789012", name="Org")
-        cls.branch = Branch.objects.create(
-            organization=org,
-            address="Addr",
-            yandex_map_url="https://yandex.ru/maps/org/x",
-            twogis_map_url="https://2gis.ru/firm/123",
-            vlru_url="https://www.vl.ru/test",
-        )
-
-        # older
-        Review.objects.create(
-            branch=cls.branch,
-            author="a1",
-            rating=3,
-            content="c1",
-            provider="yandex",
-            published_date=datetime.now() - timedelta(days=2),
-        )
-        # newer
-        Review.objects.create(
-            branch=cls.branch,
-            author="a2",
-            rating=5,
-            content="c2",
-            provider="yandex",
-            published_date=datetime.now() - timedelta(days=1),
-        )
-        Review.objects.create(
-            branch=cls.branch,
-            author="v1",
-            rating=4,
-            content="vc1",
-            provider="vlru",
-            published_date=datetime.now(),
-        )
-
-        BranchIPMapping.objects.create(branch=cls.branch, ip_address="1.2.3.4")
+class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
+    """Тесты GET /api/common/reviews (по branch_id)."""
 
     def test_get_reviews_basic_and_pagination(self):
         resp = self.client.get("/api/common/reviews", {"branch_id": self.branch.id})
@@ -114,13 +74,3 @@ class ReviewsApiTests(APITestCase):
             {"branch_id": self.branch.id, "filters": "branch__organization__inn=123456789012"},
         )
         self.assertEqual(resp.status_code, 400)
-
-    def test_reviews_by_ip(self):
-        resp = self.client.get(
-            "/api/common/reviews_by_ip",
-            {},
-            HTTP_X_FORWARDED_FOR="1.2.3.4",
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertIn("branches", resp.data)
-        self.assertGreaterEqual(len(resp.data["reviews"]), 1)
