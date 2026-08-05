@@ -1,6 +1,6 @@
 # Проект для парсинга отзывов
 
-Сервис для сбора отзывов с Яндекс.Карт, 2GIS, VL.RU и видео из плейлистов YouTube и VK.
+Сервис для сбора отзывов с Яндекс.Карт, 2GIS и VL.RU.
 
 **Ссылки:**
 - Swagger (документация API): http://185.104.113.137:8000/swagger/
@@ -41,10 +41,8 @@ https://www.vl.ru/art-mesh
 6.	Документация по получению данных через API: http://185.104.113.137:8000/swagger/
 
 **Эндпоинты:**
-- `GET /api/common/get_reviews/?branch_id=<id>` — отзывы по ID филиала
-- `GET /api/common/get_reviews_by_ip` — отзывы по IP клиента (заголовок X-Forwarded-For или REMOTE_ADDR)
-- `GET /api/common/v2/reviews?branch_id=<id>` — отзывы v2 (рекомендуется)
-- `GET /api/common/v2/reviews_by_ip` — отзывы v2 по IP (рекомендуется)
+- `GET /api/common/reviews?branch_id=<id>` — отзывы по ID филиала
+- `GET /api/common/reviews_by_ip` — отзывы по IP клиента (заголовок X-Forwarded-For или REMOTE_ADDR)
 - `GET /api/common/get_videos_by_ip` — видео по IP клиента
 
 **Структура ответа:**
@@ -52,72 +50,46 @@ https://www.vl.ru/art-mesh
 - **provider_reviews_count** — количество отзывов по провайдерам в БД.
 - **reviews** — массив отзывов. Поле `photos` — ссылки на картинки через запятую.
 
-## Фильтры и параметры в запросе на получения отзывов (v1)
+## Фильтры и параметры в запросе на получение отзывов
 
-Параметр "only_providers": True отвечает за то, что в результате будут только провайдеры из массива providers.
+- `min_rating` — минимальный рейтинг отзыва, по умолчанию `4`. Чтобы получить вообще все отзывы, включая низкие оценки, передайте `min_rating=1`.
+- `offset`, `limit` — пагинация (работают, только если не задан `providers`).
+- `sort_photos=true` — сначала показывать отзывы с фото.
+- `providers` — нужные площадки через запятую, например `providers=yandex,vlru`.
+- `only_providers=true` — показывать только площадки из `providers`, без остальных.
+- `count_<provider>` — лимит отзывов для конкретной площадки, например `count_yandex=5`.
+- `filters` / `filters_<provider>` — фильтр по полям отзыва. Общий `filters` действует, только если `providers` не задан; `filters_<provider>` — для конкретной площадки внутри `providers`.
 
-Фильтры пишутся в параметре "filters" элемента параметра "providers":
+Разрешённые поля для фильтра: `author`, `avatar`, `video`, `photos`, `published_date`, `rating`, `content`, `provider`, `review_url`.
+Разрешённые операторы: `exact` (по умолчанию, можно не указывать), `gt`, `lt`, `gte`, `lte`, `in`, `isnull`, `icontains`. Фильтр по любому другому полю (в том числе по связанным моделям) будет отклонён с ошибкой 400.
 
-{
-
-  "provider": "2gis",
-  
-  "count": 0,
-  
-  "filters": "avatar__isnull=false&rating__gt=4"
-  
-}
-
-Примеры фильтров (фильтр в запросе → какой результат будет). Фильтры можно соединять конструкцией И через "&" между ними
+Примеры фильтров (фильтр в запросе → какой результат будет). Несколько условий соединяются через "&":
 
     - author=test
-    
     - author!=test
-    
     - rating__gt=4 → rating > 4
-    
     - rating__lt=5 → rating < 5
-    
-    - author__icontains=test → test in author
-    
-    - !author__icontains=test → not test in author
-    
-    - rating__in=1,2,3 → rating in 1,2,3
-    
-    - !rating__in=1,2,3 → not rating in 1,2,3
-    
-    - avatar__isnull=true → avatar = null
-    
-    - avatar__isnull=false → avatar != null
+    - author__icontains=test → test содержится в author
+    - !author__icontains=test → test не содержится в author
+    - rating__in=1,2,3 → rating в 1,2,3
+    - !rating__in=1,2,3 → rating не в 1,2,3
+    - avatar__isnull=true → avatar не заполнен
+    - avatar__isnull=false → avatar заполнен
 
-## Рекомендуемый формат параметров (v2)
+Примеры запросов:
 
-В v2 можно передавать провайдеры как CSV и управлять лимитами/фильтрами без JSON.
-
-Примеры:
-
-- Получить отзывы по филиалу (последние 50):
-  - `GET /api/common/v2/reviews?branch_id=<id>&limit=50&offset=0`
+- Все отзывы филиала, включая низкие оценки:
+  - `GET /api/common/reviews?branch_id=<id>&min_rating=1&limit=50&offset=0`
 
 - Взять только Яндекс и VL.ru (Яндекс ограничить одним отзывом):
-  - `GET /api/common/v2/reviews?branch_id=<id>&providers=yandex,vlru&count_yandex=1&only_providers=true`
+  - `GET /api/common/reviews?branch_id=<id>&providers=yandex,vlru&count_yandex=1&only_providers=true`
 
-- Фильтры по провайдеру:
-  - `GET /api/common/v2/reviews?branch_id=<id>&providers=yandex&filters_yandex=rating__gt=4&only_providers=true`
+- Фильтр по конкретной площадке:
+  - `GET /api/common/reviews?branch_id=<id>&providers=yandex&filters_yandex=rating__gt=4&only_providers=true`
 
-## Парсинг видео
+## Видео
 
-создаем новый плейлист и добавляем ссылку на плейлист
-
-![image](https://github.com/user-attachments/assets/fccf9c63-8a4f-4783-af7d-f50d406692e8)
-
-для вк необходимо выбирать ссылки типа: https://vkvideo.ru/playlist/-157530610_10
-
-(сейчас в вк парсится из плейлиста не более 10 видео, можно поменять)
-
-для ютуба https://www.youtube.com/playlist?list=PLyIn--Pv43vK3HGN7uoH0N9A89zeYxdCn
-
-сохраняем, после видио из плейлистов спарсятся.
+Автоматический парсинг видео из YouTube/VK-плейлистов из проекта убран (модуль удалён при рефакторинге структуры). Модели `Playlist`/`Video` и получение уже сохранённых видео по IP по-прежнему работают.
 
 ## Получение видео 
 
