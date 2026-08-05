@@ -10,25 +10,33 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 from .logging_conf import configure_logging
-
-configure_logging()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# .env лежит в корне репозитория (на уровень выше BASE_DIR — там же, где docker-compose.yml).
+# load_dotenv() не переопределяет уже выставленные переменные окружения (например, из
+# docker-compose env_file:), и ничего не делает, если файла .env вообще нет.
+load_dotenv(BASE_DIR.parent / '.env')
+
+configure_logging()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@2i7ecujl!_xwce$!@vkn(b&#fhzbr9ng+eldeu!_%4lqye@ey'
+# Значение обязательно берётся из .env — если его нет, процесс не запустится
+# (это осознанно: секретный ключ не должен иметь встроенного значения по умолчанию).
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['185.104.113.137', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1').split(',')
 
 
 # Application definition
@@ -134,7 +142,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_RESULT_EXTENDED = True

@@ -9,10 +9,10 @@ services:
       - .:/code/review_parser
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - YOUTUBE_API_KEY=dummy-key
-      
 
   redis:
     image: redis:latest
@@ -30,13 +30,14 @@ services:
     command: celery -A review_parser worker --loglevel=info --pool=solo --concurrency=1
     volumes:
       - .:/code
-    depends_on: 
+    depends_on:
       - redis
       - web
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - YOUTUBE_API_KEY=dummy-key
-    
+
   celery_beat:
     build: .
     command: celery -A review_parser beat --loglevel=info
@@ -44,8 +45,8 @@ services:
       - .:/code
     depends_on:
       - redis
-    environment:
-      - YOUTUBE_API_KEY=dummy-key
+    env_file:
+      - .env
 
 
 volumes:

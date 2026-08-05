@@ -6,6 +6,22 @@
 - Swagger (документация API): http://185.104.113.137:8000/swagger/
 - Админ-панель: http://185.104.113.137:8000/admin
 
+## Переменные окружения
+
+Перед первым запуском скопируйте `.env.example` в `.env` и заполните реальными значениями — без файла `.env` (точнее, без `SECRET_KEY` в нём) проект не запустится вообще:
+
+```
+cp .env.example .env
+```
+
+- `SECRET_KEY` — обязателен, без значения по умолчанию. Сгенерировать новый: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`.
+- `DEBUG` — `True`/`False`.
+- `ALLOWED_HOSTS` — домены/IP через запятую, без пробелов.
+- `CELERY_BROKER_URL` — адрес Redis для Celery (`redis://redis:6379/0` в docker-compose, `redis://localhost:6379/0` для локального запуска).
+- `TWOGIS_API_KEY` — ключ 2GIS Public API, без него парсинг 2GIS не работает.
+
+При запуске через `docker compose up` переменные подхватываются из `.env` автоматически (`env_file:` в `docker-compose.yml`).
+
 ## Добавление новой организации:
 
 1.	Заходим в админку -> организации
