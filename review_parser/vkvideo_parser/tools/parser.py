@@ -7,7 +7,7 @@ import requests
 from loguru import logger
 from playwright.sync_api import sync_playwright
 
-from common_parser.tools.create_objects import create_video, get_or_create_playlist
+from common_parser.services.create_objects import create_video, get_or_create_playlist
 
 
 def get_token(url: str) -> dict:

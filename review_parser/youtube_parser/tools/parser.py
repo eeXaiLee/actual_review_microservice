@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import isodate
 from datetime import datetime
-from common_parser.tools.create_objects import create_video, get_or_create_playlist
+from common_parser.services.create_objects import create_video, get_or_create_playlist
 
 load_dotenv()
 

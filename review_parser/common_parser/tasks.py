@@ -1,12 +1,10 @@
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
-from common_parser.tools.parse import (
-    parse_all_providers,
-    create_yandex_reviews,
-    create_2gis_reviews,
-    create_vlru_reviews,
-)
+from common_parser.services.parse_all_providers import parse_all_providers
+from common_parser.parsers.yandex import create_yandex_reviews
+from common_parser.parsers.twogis import create_2gis_reviews
+from common_parser.parsers.vlru import create_vlru_reviews
 from common_parser.tools.parse_videos import parse_youtube_videos, parse_vk_videos
 from common_parser.models import Branch, Playlist
 from django.shortcuts import get_object_or_404
