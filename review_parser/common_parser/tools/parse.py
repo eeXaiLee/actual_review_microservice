@@ -1,6 +1,6 @@
-from twogis_parser.tools.parser import create_2gis_reviews
-from yandex_parser.tools.parser import create_yandex_reviews
-from vl_parser.tools.parser import create_vlru_reviews
+from common_parser.parsers.twogis import create_2gis_reviews
+from common_parser.parsers.yandex import create_yandex_reviews
+from common_parser.parsers.vlru import create_vlru_reviews
 
 
 def parse_all_providers(branch):

@@ -1,12 +1,54 @@
 import json
 import time
 import re
-from common_parser.tools.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
-from twogis_parser.tools.to_reviews import convert_2gis_reviews_to_model_data
-from loguru import logger
-from common_parser.models import Branch
 from datetime import datetime
+
+from common_parser.tools.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
+from common_parser.models import Branch
+from loguru import logger
 from common_parser.services.http_client import get as http_get
+
+
+def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: str) -> dict:
+    """
+    Преобразует данные отзывов из 2GIS в объекты модели Review.
+
+    :param branch: Объект Branch, к которому привязываются отзывы
+    :param review_data: Данные review
+    :return: словарь для модели review
+    """
+
+    try:
+        published_date = datetime.fromisoformat(review_data['date_created'])
+    except (KeyError, ValueError):
+        published_date = datetime.now()
+
+    avatar_url = review_data.get('user', {}).get('photo_preview_urls', {}).get('url', '')
+
+    photos_pr = review_data.get('photos', [])
+
+    photos = []
+
+    for photo in photos_pr:
+        # Извлекаем ссылку 'url' из каждого фото
+        photos.append(photo['preview_urls']['url'])
+
+    photos_str = ','.join(photos)
+
+    review = {
+        'branch': branch,
+        'author': review_data.get('user', {}).get('name', 'Аноним'),
+        'avatar': avatar_url if avatar_url else None,
+        'video': None,
+        'photos': photos_str,
+        'published_date': published_date,
+        'rating': review_data.get('rating', 5),
+        'content': review_data.get('text', ''),
+        'provider': '2gis',
+        'review_url': url + "/tab/reviews/review/" + review_data.get('id', ''),
+    }
+    return review
+
 
 @logger.catch
 def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int:
@@ -25,10 +67,10 @@ def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         address=address,
         url_name="twogis_map_url",
         url=url,
-        review_count_name = 'twogis_review_count',
-        review_count = dict_2gis['count'],
-        review_avg_name = 'twogis_review_avg',
-        review_avg = dict_2gis['rating']
+        review_count_name='twogis_review_count',
+        review_count=dict_2gis['count'],
+        review_avg_name='twogis_review_avg',
+        review_avg=dict_2gis['rating']
     )
 
     branch.twogis_parse_date = datetime.now()
@@ -45,6 +87,7 @@ def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="",
     )
     return (len(dict_2gis['reviews']), cnt)
 
+
 def get_api_url_from_2gis(url: str, limit: int = 50) -> str:
 
     pattern = r'/firm/(\d+)'
@@ -53,7 +96,8 @@ def get_api_url_from_2gis(url: str, limit: int = 50) -> str:
         firm_id = match.group(1)
     else:
         return None
-    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key=37c04fe6-a560-4549-b459-02309cf643ad&locale=ru_RU" 
+    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key=37c04fe6-a560-4549-b459-02309cf643ad&locale=ru_RU"
+
 
 def get_api_url_from_2gis_offset(url: str, limit: int = 50, offset: int = 50) -> str:
 
@@ -63,7 +107,8 @@ def get_api_url_from_2gis_offset(url: str, limit: int = 50, offset: int = 50) ->
         firm_id = match.group(1)
     else:
         return None
-    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&offset={offset}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key=37c04fe6-a560-4549-b459-02309cf643ad&locale=ru_RU" 
+    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&offset={offset}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key=37c04fe6-a560-4549-b459-02309cf643ad&locale=ru_RU"
+
 
 @logger.catch
 def parse(url):
@@ -92,4 +137,3 @@ def parse(url):
         'count': response_dict["meta"]["branch_reviews_count"],
         'reviews': response_dict["reviews"]
     }
-

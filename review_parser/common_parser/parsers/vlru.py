@@ -18,10 +18,10 @@ def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         address=address,
         url_name="vlru_url",
         url=url,
-        review_count_name = 'vlru_review_count',
-        review_count = dict_vlru['count'],
-        review_avg_name = 'vlru_review_avg',
-        review_avg = -1
+        review_count_name='vlru_review_count',
+        review_count=dict_vlru['count'],
+        review_avg_name='vlru_review_avg',
+        review_avg=-1
     )
 
     if branch.vlru_org_id:      
