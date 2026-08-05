@@ -5,8 +5,7 @@ from common_parser.services.parse_all_providers import parse_all_providers
 from common_parser.parsers.yandex import create_yandex_reviews
 from common_parser.parsers.twogis import create_2gis_reviews
 from common_parser.parsers.vlru import create_vlru_reviews
-from common_parser.tools.parse_videos import parse_youtube_videos, parse_vk_videos
-from common_parser.models import Branch, Playlist
+from common_parser.models import Branch
 from django.shortcuts import get_object_or_404
 from loguru import logger
 from time import perf_counter
@@ -86,25 +85,3 @@ def parse_2gis_async(branch_id):
         f"parse_2gis_async finished: branch_id={branch_id} duration_ms={int((perf_counter()-t0)*1000)}"
     )
     return {"branch_id": branch_id, "results": results}
-
-
-@shared_task(name='parse_youtube_videos_async')
-def parse_youtube_videos_async(playlist_id):
-    t0 = perf_counter()
-    playlist = get_object_or_404(Playlist, id=playlist_id)
-    results = parse_youtube_videos(playlist.url)
-    logger.info(
-        f"parse_youtube_videos_async finished: playlist_id={playlist_id} duration_ms={int((perf_counter()-t0)*1000)}"
-    )
-    return {"playlist_id": playlist_id, "results": results}
-
-
-@shared_task(name='parse_vk_videos_async')
-def parse_vk_videos_async(playlist_id):
-    t0 = perf_counter()
-    playlist = get_object_or_404(Playlist, id=playlist_id)
-    results = parse_vk_videos(playlist.url)
-    logger.info(
-        f"parse_vk_videos_async finished: playlist_id={playlist_id} duration_ms={int((perf_counter()-t0)*1000)}"
-    )
-    return {"playlist_id": playlist_id, "results": results}

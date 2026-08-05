@@ -13,8 +13,6 @@ from common_parser.tasks import (
     parse_2gis_async,
     parse_vlru_async,
     parse_yandex_async,
-    parse_youtube_videos_async,
-    parse_vk_videos_async,
 )
 from django.shortcuts import get_object_or_404
 from django_celery_results.admin import TaskResultAdmin
@@ -105,37 +103,4 @@ class PlaylistAdmin(NestedModelAdmin):
     list_display = ('id', 'title', 'count')
     list_filter = ('title',)
 
-    inlines = [VideoInline] 
-
-    def parsing(self, request, object_id=None):  
-
-        #parse_all_providers_async.delay(object_id)
-
-        return HttpResponseRedirect(reverse_lazy('admin:common_parser_playlist_changelist'))
-    
-    
-    def parsing_youtube(self, request, object_id=None):  
-
-        parse_youtube_videos_async.delay(object_id)#.delay(object_id)
-
-        return HttpResponseRedirect(reverse_lazy('admin:common_parser_playlist_changelist'))
-    
-    def parsing_vk(self, request, object_id=None):  
-
-        parse_vk_videos_async.delay(object_id)#.delay(object_id)#.delay(object_id)
-
-        return HttpResponseRedirect(reverse_lazy('admin:common_parser_playlist_changelist'))
-    
-
-    def get_urls(self):
-        urls = super().get_urls()
-        info = self.model._meta.app_label, self.model._meta.model_name
-        my_urls = [
-            path('<path:object_id>/change/parse/', self.admin_site.admin_view(self.parsing)),
-            path('<path:object_id>/change/parse-youtube/', self.admin_site.admin_view(self.parsing_youtube)),
-            path('<path:object_id>/change/parse-vk/', self.admin_site.admin_view(self.parsing_vk)),
-        ]
-        return my_urls + urls
-
-
-    change_form_template = 'admin/playlist_custom.html'
+    inlines = [VideoInline]

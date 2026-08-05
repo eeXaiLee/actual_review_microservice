@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'common_parser',
-    'youtube_parser',
-    'vkvideo_parser',
 
 ]
 

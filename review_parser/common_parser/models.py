@@ -49,7 +49,7 @@ class Branch(models.Model):
         return f'{self.id} : {self.organization}: {self.address[:50]}'
 
 @receiver(post_save, sender=Branch)
-def send_notification(sender, instance, created, **kwargs):
+def notify_branch_created(sender, instance, created, **kwargs):
     if created:
         from common_parser.tasks import parse_all_providers_async_on_create
         on_commit(lambda: parse_all_providers_async_on_create.delay(instance.organization.id, instance.address))
@@ -119,15 +119,6 @@ class Playlist(models.Model):
     
     def __str__(self):
         return self.title or self.url
-
-@receiver(post_save, sender=Playlist)
-def send_notification(sender, instance, created, **kwargs):
-    if created:
-        from common_parser.tasks import parse_youtube_videos_async, parse_vk_videos_async
-        if "youtube" in instance.url:
-            on_commit(lambda: parse_youtube_videos_async.delay(instance.id))
-        elif "vk" in instance.url:
-            on_commit(lambda: parse_vk_videos_async.delay(instance.id))
 
 class Video(models.Model):
     url = models.URLField()
