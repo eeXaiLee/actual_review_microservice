@@ -113,18 +113,7 @@ def get_reviews_by_ip(request):
     return Response(data)
 
 
-@swagger_auto_schema(
-    method="GET",
-    manual_parameters=[],
-    responses={200: '''
-                    "ip",
-                    "playlists": [{"id", "title", "count", "url", "parse_date", "provider"}],
-                    "provider_videos_count": [{"playlist__provider", "review_count"}],
-                    "videos": [
-                        {"id", "url", "title", "author", "date", "preview", "duration", "playlist"}
-                    ]
-                            ''', 400: "Некорректные данные"}
-)
+@swagger_auto_schema(method="GET", auto_schema=None)
 @api_view(['GET'])
 def get_videos_by_ip(request):
     ip = _client_ip(request)
