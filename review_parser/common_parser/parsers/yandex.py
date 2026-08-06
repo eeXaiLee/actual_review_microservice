@@ -2,8 +2,9 @@ import re
 from datetime import datetime
 from typing import Optional
 
-import requests
 from bs4 import BeautifulSoup
+from loguru import logger
+from playwright.sync_api import sync_playwright
 
 from common_parser.services.create_objects import (
     create_review,
@@ -11,26 +12,80 @@ from common_parser.services.create_objects import (
     get_or_create_Organization,
 )
 from common_parser.services.parse_date_string import parse_date_string
-from loguru import logger
-from common_parser.services.http_client import get as http_get
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-}
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
+
+
+def _scroll_load_all_reviews(page) -> None:
+    """
+    Yandex Maps подгружает отзывы порциями (~50 штук) по мере прокрутки
+    внутреннего списка отзывов, а не отдаёт их все сразу. Подгрузка
+    следующей порции срабатывает, только когда список долистан строго
+    до конца (scrollTop == scrollHeight) — небольшой прокрутки на
+    фиксированное число пикселей недостаточно.
+    """
+    previous_count = -1
+    stable_rounds = 0
+
+    for _ in range(30):
+        current_count = page.eval_on_selector_all(
+            ".business-review-view__info", "els => els.length"
+        )
+        if current_count == previous_count:
+            stable_rounds += 1
+            if stable_rounds >= 2:
+                break
+        else:
+            stable_rounds = 0
+        previous_count = current_count
+
+        try:
+            page.eval_on_selector(
+                ".scroll__container", "el => { el.scrollTop = el.scrollHeight; }"
+            )
+        except Exception:
+            break
+        page.wait_for_timeout(1500)
+
+
+def _fetch_rendered_html(url: str) -> str:
+    """
+    Yandex Maps сервером отдаёт только пустой каркас страницы (skeleton),
+    сами отзывы подгружаются через JS уже в браузере. Поэтому обычный
+    requests.get() здесь не подходит и нужен реальный рендеринг страницы.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, args=["--no-sandbox"])
+        context = browser.new_context(
+            user_agent=USER_AGENT,
+            viewport={"width": 1920, "height": 1080},
+            locale="ru-RU",
+            extra_http_headers={"Accept-Language": "ru-RU,ru;q=0.9"},
+        )
+        page = context.new_page()
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        try:
+            page.wait_for_selector(
+                ".business-review-view__info", state="attached", timeout=20000
+            )
+            _scroll_load_all_reviews(page)
+        except Exception:
+            logger.warning(f"Yandex reviews selector not found in time: url={url}")
+        html = page.content()
+        browser.close()
+        return html
 
 
 @logger.catch
 def parse(url: str, limit: Optional[int] = None) -> dict:
     logger.info(f"Yandex parse started: url={url} limit={limit}")
-    response = http_get(url, headers=HEADERS)
-    response.raise_for_status()
+    html = _fetch_rendered_html(url)
 
-    soup = BeautifulSoup(response.text, "lxml")
+    soup = BeautifulSoup(html, "lxml")
 
     reviews_counter = -1
     rating_global = -1.0
@@ -157,4 +212,3 @@ def create_yandex_reviews(
         f"Yandex create finished: url={url} branch_address={address} parsed={len(dict_yandex['reviews'])} created={cnt}"
     )
     return (len(dict_yandex["reviews"]), cnt)
-
