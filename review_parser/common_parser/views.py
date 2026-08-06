@@ -46,9 +46,9 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter('sort_photos', openapi.IN_QUERY, description="Сначала показывать отзывы с фото", type=openapi.TYPE_BOOLEAN, required=False),
     openapi.Parameter('offset', openapi.IN_QUERY, description="Пагинация: смещение (применяется, только если providers не задан)", type=openapi.TYPE_INTEGER, required=False),
     openapi.Parameter('limit', openapi.IN_QUERY, description="Пагинация: количество отзывов (применяется, только если providers не задан)", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('filters', openapi.IN_QUERY, description="Фильтр по полям отзыва, например rating__gt=4&author__icontains=ivan (применяется, только если providers не задан)", type=openapi.TYPE_STRING, required=False),
-    openapi.Parameter('count_<provider>', openapi.IN_QUERY, description="Лимит отзывов для конкретного провайдера, например count_yandex=5", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('filters_<provider>', openapi.IN_QUERY, description="Фильтр для конкретного провайдера, например filters_yandex=rating__gt=4", type=openapi.TYPE_STRING, required=False),
+    openapi.Parameter('filters', openapi.IN_QUERY, description="Фильтр по полям отзыва (применяется всегда: без providers — ко всей выдаче, а с providers — как фильтр по умолчанию для тех провайдеров, для которых не задан свой filters_provider)", type=openapi.TYPE_STRING, required=False),
+    openapi.Parameter('count_<provider>', openapi.IN_QUERY, description="Лимит отзывов для конкретного провайдера (применяется только вместе с providers), например count_yandex=5", type=openapi.TYPE_INTEGER, required=False),
+    openapi.Parameter('filters_<provider>', openapi.IN_QUERY, description="Фильтр для конкретного провайдера (применяется только вместе с providers, переопределяет общий filters только для этого провайдера)", type=openapi.TYPE_STRING, required=False),
 ]
 
 

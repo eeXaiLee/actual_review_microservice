@@ -14,7 +14,6 @@ API для парсинга и получения отзывов с различ
 **Основные эндпоинты:**
 - `GET /api/common/reviews` — отзывы по ID филиала
 - `GET /api/common/reviews_by_ip` — отзывы по IP (требуется Branch IP Mapping)
-- `GET /api/common/get_videos_by_ip` — видео по IP (требуется Playlist IP Mapping)
 
 **Провайдеры отзывов:** yandex, 2gis, vlru
 """,
