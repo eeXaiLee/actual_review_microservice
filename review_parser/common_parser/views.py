@@ -8,11 +8,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count
 from loguru import logger
 
-from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist
+from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist, Review
 from .serializers import ReviewSerializer, BranchSerializer, VideoSerializer, PlaylistSerializer
 from common_parser.services.reviews_query import (
     get_reviews_response_for_branches,
     UnsupportedFilterError,
+    SORT_CHOICES,
 )
 
 
@@ -32,23 +33,43 @@ REVIEWS_RESPONSE_SCHEMA = '''
                         "twogis_review_count", "twogis_review_avg", "twogis_parse_date",
                         "vlru_review_count", "vlru_review_avg", "vlru_parse_date"
                     },
-                    "provider_reviews_count": [{"provider", "review_count"}],
                     "reviews": [
                         {"id", "author", "avatar", "video", "photos", "published_date",
                          "rating", "content", "provider", "branch", "review_url"}
-                    ]
+                    ],
+                    "total_filtered": "сколько отзывов подходит под текущий запрос (с учётом всех фильтров)",
+                    "offset": "текущее смещение пагинации",
+                    "limit": "текущий размер страницы (null, если не задан)",
+                    "provider_totals_unfiltered": [{"provider", "review_count"}]
                             '''
 
+# google не парсится (парсер убран при рефакторинге), поэтому в список для
+# фильтра его не включаем — иначе в дропдауне будет вариант, который никогда
+# не вернёт ни одного отзыва
+PROVIDER_VALUES = [choice[0] for choice in Review.PROVIDER_CHOICES if choice[0] != "google"]
+
 REVIEWS_MANUAL_PARAMETERS = [
-    openapi.Parameter('providers', openapi.IN_QUERY, description="Провайдеры через запятую, например yandex,vlru", type=openapi.TYPE_STRING, required=False),
-    openapi.Parameter('only_providers', openapi.IN_QUERY, description="Показывать только перечисленные в providers площадки, без остальных", type=openapi.TYPE_BOOLEAN, required=False),
+    openapi.Parameter(
+        'providers', openapi.IN_QUERY,
+        description="Провайдеры, отзывы которых нужно вернуть (если не задано — все провайдеры филиала)",
+        type=openapi.TYPE_ARRAY,
+        items=openapi.Items(type=openapi.TYPE_STRING, enum=PROVIDER_VALUES),
+        collection_format='csv',
+        required=False,
+    ),
     openapi.Parameter('min_rating', openapi.IN_QUERY, description="Минимальный рейтинг отзыва (по умолчанию 4)", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('sort_photos', openapi.IN_QUERY, description="Сначала показывать отзывы с фото", type=openapi.TYPE_BOOLEAN, required=False),
-    openapi.Parameter('offset', openapi.IN_QUERY, description="Пагинация: смещение (применяется, только если providers не задан)", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('limit', openapi.IN_QUERY, description="Пагинация: количество отзывов (применяется, только если providers не задан)", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('filters', openapi.IN_QUERY, description="Фильтр по полям отзыва (применяется всегда: без providers — ко всей выдаче, а с providers — как фильтр по умолчанию для тех провайдеров, для которых не задан свой filters_provider)", type=openapi.TYPE_STRING, required=False),
-    openapi.Parameter('count_<provider>', openapi.IN_QUERY, description="Лимит отзывов для конкретного провайдера (применяется только вместе с providers), например count_yandex=5", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('filters_<provider>', openapi.IN_QUERY, description="Фильтр для конкретного провайдера (применяется только вместе с providers, переопределяет общий filters только для этого провайдера)", type=openapi.TYPE_STRING, required=False),
+    openapi.Parameter('has_photos', openapi.IN_QUERY, description="true — только отзывы с фото, false — только без фото", type=openapi.TYPE_BOOLEAN, required=False),
+    openapi.Parameter('author', openapi.IN_QUERY, description="Поиск по имени автора (частичное совпадение, без учёта регистра)", type=openapi.TYPE_STRING, required=False),
+    openapi.Parameter(
+        'sort', openapi.IN_QUERY,
+        description="Сортировка отзывов (по умолчанию newest)",
+        type=openapi.TYPE_STRING,
+        enum=list(SORT_CHOICES),
+        required=False,
+    ),
+    openapi.Parameter('offset', openapi.IN_QUERY, description="Пагинация: смещение", type=openapi.TYPE_INTEGER, required=False),
+    openapi.Parameter('limit', openapi.IN_QUERY, description="Пагинация: количество отзывов", type=openapi.TYPE_INTEGER, required=False),
+    openapi.Parameter('filters', openapi.IN_QUERY, description="Полный фильтр по полям отзыва — для случаев, не покрытых полями выше", type=openapi.TYPE_STRING, required=False),
 ]
 
 
@@ -81,8 +102,11 @@ def get_reviews(request):
 
     data = {
         'branch': BranchSerializer(branch).data,
-        'provider_reviews_count': service_result["provider_reviews_count"],
         'reviews': reviews_data,
+        'total_filtered': service_result["total_filtered"],
+        'offset': service_result["offset"],
+        'limit': service_result["limit"],
+        'provider_totals_unfiltered': service_result["provider_totals_unfiltered"],
     }
     return Response(data)
 
@@ -107,8 +131,11 @@ def get_reviews_by_ip(request):
     data = {
         'ip': ip,
         'branches': BranchSerializer(branches, many=True).data,
-        'provider_reviews_count': service_result["provider_reviews_count"],
         'reviews': reviews_data,
+        'total_filtered': service_result["total_filtered"],
+        'offset': service_result["offset"],
+        'limit': service_result["limit"],
+        'provider_totals_unfiltered': service_result["provider_totals_unfiltered"],
     }
     return Response(data)
 
