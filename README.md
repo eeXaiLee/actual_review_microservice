@@ -59,24 +59,25 @@ https://www.vl.ru/art-mesh
 **Эндпоинты:**
 - `GET /api/common/reviews?branch_id=<id>` — отзывы по ID филиала
 - `GET /api/common/reviews_by_ip` — отзывы по IP клиента (заголовок X-Forwarded-For или REMOTE_ADDR)
-- `GET /api/common/get_videos_by_ip` — видео по IP клиента
 
 **Структура ответа:**
 - **branch** (или **branches** для get_reviews_by_ip) — данные филиала: средние оценки и количество отзывов с каждого провайдера (google, yandex, twogis, vlru). Если оценку не удалось определить — будет -1.
-- **provider_reviews_count** — количество отзывов по провайдерам в БД.
-- **reviews** — массив отзывов. Поле `photos` — ссылки на картинки через запятую.
+- **reviews** — массив отзывов с учётом всех фильтров и пагинации. Поле `photos` — ссылки на картинки через запятую.
+- **total_filtered** — сколько всего отзывов подходит под текущий запрос (с учётом фильтров) — используйте, чтобы понять, есть ли следующая страница.
+- **offset**, **limit** — текущие параметры пагинации.
+- **provider_totals_unfiltered** — количество отзывов по провайдерам в БД, без учёта фильтров (просто общая статистика по площадкам, не связана с содержимым `reviews`).
 
 ## Фильтры и параметры в запросе на получение отзывов
 
 - `min_rating` — минимальный рейтинг отзыва, по умолчанию `4`. Чтобы получить вообще все отзывы, включая низкие оценки, передайте `min_rating=1`.
-- `offset`, `limit` — пагинация (работают, только если не задан `providers`).
-- `sort_photos=true` — сначала показывать отзывы с фото.
-- `providers` — нужные площадки через запятую, например `providers=yandex,vlru`.
-- `only_providers=true` — показывать только площадки из `providers`, без остальных.
-- `count_<provider>` — лимит отзывов для конкретной площадки, например `count_yandex=5`.
-- `filters` / `filters_<provider>` — фильтр по полям отзыва. Общий `filters` действует, только если `providers` не задан; `filters_<provider>` — для конкретной площадки внутри `providers`.
+- `offset`, `limit` — пагинация, работают всегда.
+- `providers` — нужные площадки через запятую, например `providers=yandex,vlru`. Если не задано — возвращаются отзывы со всех площадок филиала.
+- `has_photos` — `true` — только отзывы с фото, `false` — только без фото.
+- `author` — поиск по автору (частичное совпадение, без учёта регистра).
+- `sort` — `newest` (по умолчанию), `oldest` или `photos_first`.
+- `filters` — продвинутый фильтр по полям отзыва для случаев, не покрытых параметрами выше (см. ниже).
 
-Разрешённые поля для фильтра: `author`, `avatar`, `video`, `photos`, `published_date`, `rating`, `content`, `provider`, `review_url`.
+Разрешённые поля для `filters`: `author`, `avatar`, `video`, `photos`, `published_date`, `rating`, `content`, `provider`, `review_url`.
 Разрешённые операторы: `exact` (по умолчанию, можно не указывать), `gt`, `lt`, `gte`, `lte`, `in`, `isnull`, `icontains`. Фильтр по любому другому полю (в том числе по связанным моделям) будет отклонён с ошибкой 400.
 
 Примеры фильтров (фильтр в запросе → какой результат будет). Несколько условий соединяются через "&":
@@ -97,22 +98,15 @@ https://www.vl.ru/art-mesh
 - Все отзывы филиала, включая низкие оценки:
   - `GET /api/common/reviews?branch_id=<id>&min_rating=1&limit=50&offset=0`
 
-- Взять только Яндекс и VL.ru (Яндекс ограничить одним отзывом):
-  - `GET /api/common/reviews?branch_id=<id>&providers=yandex,vlru&count_yandex=1&only_providers=true`
+- Только Яндекс и VL.ru, с фото, сначала новые:
+  - `GET /api/common/reviews?branch_id=<id>&providers=yandex,vlru&has_photos=true&sort=newest`
 
-- Фильтр по конкретной площадке:
-  - `GET /api/common/reviews?branch_id=<id>&providers=yandex&filters_yandex=rating__gt=4&only_providers=true`
+- Поиск по автору с рейтингом выше 4 (через продвинутый фильтр):
+  - `GET /api/common/reviews?branch_id=<id>&author=иван&filters=rating__gt=4`
 
-## Видео
+## Видео (устаревшая функция)
 
-Автоматический парсинг видео из YouTube/VK-плейлистов из проекта убран (модуль удалён при рефакторинге структуры). Модели `Playlist`/`Video` и получение уже сохранённых видео по IP по-прежнему работают.
-
-## Получение видео 
-
-Создаём Playlist IP Mappings в админке и получаем данные на эндпоинте `GET /api/common/get_videos_by_ip` (подробнее в Swagger).
-Ответ содержит: `ip`, `playlists`, `provider_videos_count`, `videos`.
-
-![image](https://github.com/user-attachments/assets/1d1f9316-d82b-4f7b-98b9-a1201b28280b)
+Автоматический парсинг видео из YouTube/VK-плейлистов убран из проекта при рефакторинге. Модели `Playlist`/`Video` и уже накопленные ранее данные по ним по-прежнему доступны на чтение через `GET /api/common/get_videos_by_ip` (создайте Playlist IP Mapping в админке) — эндпоинт скрыт из Swagger как неподдерживаемый, но продолжает отдавать исторические данные. Ответ содержит: `ip`, `playlists`, `provider_videos_count`, `videos`.
 
 
 ## Ручной парсинг

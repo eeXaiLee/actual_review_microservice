@@ -39,30 +39,28 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(len(resp2.data["reviews"]), 3)
 
-    def test_reviews_providers_csv_only_providers(self):
+    def test_reviews_providers_csv_filters_to_listed_providers_only(self):
         resp = self.client.get(
             "/api/common/reviews",
             {
                 "branch_id": self.branch.id,
                 "providers": "yandex,vlru",
-                "count_yandex": 1,
-                "only_providers": "true",
+                "min_rating": 1,
             },
         )
         self.assertEqual(resp.status_code, 200)
-        # 1 yandex + all vlru (1)
-        self.assertEqual(len(resp.data["reviews"]), 2)
+        # a1 (yandex, rating 3) + a2 (yandex, rating 5) + v1 (vlru, rating 4)
+        self.assertEqual(len(resp.data["reviews"]), 3)
         providers = {r["provider"] for r in resp.data["reviews"]}
         self.assertEqual(providers, {"yandex", "vlru"})
 
-    def test_reviews_provider_filters(self):
+    def test_reviews_filters_by_rating(self):
         resp = self.client.get(
             "/api/common/reviews",
             {
                 "branch_id": self.branch.id,
                 "providers": "yandex",
-                "filters_yandex": "rating__gt=4",
-                "only_providers": "true",
+                "filters": "rating__gt=4",
             },
         )
         self.assertEqual(resp.status_code, 200)
@@ -74,3 +72,20 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
             {"branch_id": self.branch.id, "filters": "branch__organization__inn=123456789012"},
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_reviews_legacy_params_are_ignored_not_errors(self):
+        # count_<provider>/only_providers/filters_<provider> больше не поддерживаются —
+        # старые запросы с ними не должны падать, просто эти параметры игнорируются
+        resp = self.client.get(
+            "/api/common/reviews",
+            {
+                "branch_id": self.branch.id,
+                "providers": "yandex",
+                "count_yandex": 1,
+                "only_providers": "true",
+                "filters_yandex": "rating__gt=4",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data["reviews"]), 1)
+        self.assertEqual(resp.data["reviews"][0]["author"], "a2")
