@@ -7,10 +7,6 @@
     {% csrf_token %}
     <input type="submit" value="{% trans 'Парсинг' %}" name="_parse"/>
  </form>
- <form action="{% url 'admin:common_parser_branch_change' original.pk %}parse-google/" method="POST">
-   {% csrf_token %}
-   <input type="submit" value="{% trans 'Парсинг гугла' %}" name="_parse"/>
-</form>
  <form action="{% url 'admin:common_parser_branch_change' original.pk %}parse-yandex/" method="POST">
     {% csrf_token %}
     <input type="submit" value="{% trans 'Парсинг яндекса' %}" name="_parse"/>
