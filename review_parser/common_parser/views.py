@@ -9,7 +9,7 @@ from django.db.models import Count
 from loguru import logger
 
 from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist, Review
-from .serializers import ReviewSerializer, BranchSerializer, VideoSerializer, PlaylistSerializer
+from .serializers import ReviewSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
 from common_parser.services.reviews_query import (
     get_reviews_response_for_branches,
     UnsupportedFilterError,
@@ -26,12 +26,13 @@ def _client_ip(request) -> str:
 
 REVIEWS_RESPONSE_SCHEMA = '''
                     "branch": {
-                        "id", "address", "organization",
-                        "google_map_url", "yandex_map_url", "twogis_map_url", "vlru_url", "vlru_org_id",
-                        "google_review_count", "google_review_avg", "google_parse_date",
-                        "yandex_review_count", "yandex_review_avg", "yandex_parse_date",
-                        "twogis_review_count", "twogis_review_avg", "twogis_parse_date",
-                        "vlru_review_count", "vlru_review_avg", "vlru_parse_date"
+                        "id", "address",
+                        "organization": {"id", "name", "inn"},
+                        "providers": {
+                            "yandex": {"url", "review_count", "review_avg", "parse_date"},
+                            "2gis": {"url", "review_count", "review_avg", "parse_date"},
+                            "vlru": {"url", "org_id", "review_count", "review_avg", "parse_date"}
+                        }
                     },
                     "reviews": [
                         {"id", "author", "avatar", "video", "photos", "published_date",
@@ -101,7 +102,7 @@ def get_reviews(request):
     reviews_data = ReviewSerializer(service_result["reviews"], many=True).data
 
     data = {
-        'branch': BranchSerializer(branch).data,
+        'branch': BranchResponseSerializer(branch).data,
         'reviews': reviews_data,
         'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
@@ -130,7 +131,7 @@ def get_reviews_by_ip(request):
 
     data = {
         'ip': ip,
-        'branches': BranchSerializer(branches, many=True).data,
+        'branches': BranchResponseSerializer(branches, many=True).data,
         'reviews': reviews_data,
         'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
