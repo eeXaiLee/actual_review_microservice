@@ -105,7 +105,7 @@ def parse_vlru_reviews(html_content):
 
             # Extract content
             comment_text = review_item.find('p', class_='comment-text')
-            content = comment_text.get_text(strip=True) if comment_text else ""
+            content = comment_text.get_text(separator=' ', strip=True) if comment_text else ""
             
             # Extract likes count
             likes_block = review_item.find('span', class_='likes')
