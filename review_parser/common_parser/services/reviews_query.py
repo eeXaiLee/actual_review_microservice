@@ -1,6 +1,6 @@
 from typing import Any, Iterable
 
-from django.db.models import Count, Q, QuerySet, Case, When, Value, IntegerField
+from django.db.models import Q, QuerySet, Case, When, Value, IntegerField
 
 from common_parser.models import Branch, Review
 
@@ -179,16 +179,9 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     else:
         page = reviews
 
-    provider_totals_unfiltered = (
-        Review.objects.filter(branch__in=branches_list)
-        .values("provider")
-        .annotate(review_count=Count("id"))
-    )
-
     return {
         "reviews": page,
         "total_filtered": total_filtered,
         "offset": offset,
         "limit": limit,
-        "provider_totals_unfiltered": provider_totals_unfiltered,
     }

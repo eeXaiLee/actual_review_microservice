@@ -40,8 +40,7 @@ REVIEWS_RESPONSE_SCHEMA = '''
                     ],
                     "total_filtered": "сколько отзывов подходит под текущий запрос (с учётом всех фильтров)",
                     "offset": "текущее смещение пагинации",
-                    "limit": "текущий размер страницы (null, если не задан)",
-                    "provider_totals_unfiltered": [{"provider", "review_count"}]
+                    "limit": "текущий размер страницы (null, если не задан)"
                             '''
 
 # google не парсится (парсер убран при рефакторинге), поэтому в список для
@@ -107,7 +106,6 @@ def get_reviews(request):
         'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
         'limit': service_result["limit"],
-        'provider_totals_unfiltered': service_result["provider_totals_unfiltered"],
     }
     return Response(data)
 
@@ -136,7 +134,6 @@ def get_reviews_by_ip(request):
         'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
         'limit': service_result["limit"],
-        'provider_totals_unfiltered': service_result["provider_totals_unfiltered"],
     }
     return Response(data)
 
