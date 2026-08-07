@@ -75,10 +75,11 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ReviewResponseSerializer(serializers.ModelSerializer):
     """Отзыв для ответа API отзывов: photos — настоящий массив URL, а не
-    строка через запятую (в БД поле по-прежнему хранится как строка —
-    записью отзывов занимается ReviewSerializer выше, этот только читает)."""
+    строка через запятую, rating — число, а не строка в кавычках. В БД поля
+    не меняются — записью отзывов занимается ReviewSerializer выше, этот
+    только читает."""
 
-    rating = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+    rating = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=False)
     photos = serializers.SerializerMethodField()
 
     class Meta:
