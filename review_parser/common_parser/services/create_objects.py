@@ -1,17 +1,17 @@
+from django.db import IntegrityError
+
 from common_parser.serializers import ReviewSerializer, OrganizationSerializer, BranchSerializer, VideoSerializer
 from common_parser.models import Review, Organization, Branch, Video, Playlist
 
 def create_review(data: dict)->bool:
-    """Создает отзыв, если уже есть такой отзыв возвращает False"""
-    existing_review = Review.objects.filter(
-        branch=data["branch"],
-        author=data["author"],
-        content=data["content"]
-    ).exists()
-
-    if existing_review:
-        return False
-    
+    """
+    Создаёт отзыв, если уже есть такой отзыв (тот же филиал, автор, текст и
+    провайдер) — возвращает False. Уникальность отзыва проверяется не заранее
+    отдельным запросом (это было небезопасно при параллельном запуске
+    парсинга — два запуска могли не увидеть отзыв друг друга и оба его
+    создать), а ограничением на уровне базы данных (Review.Meta.constraints):
+    если такой отзыв уже есть, .save() сам упадёт с IntegrityError.
+    """
     data_rewiew={
                     'branch': data["branch"].id,
                     'author': data["author"],
@@ -21,7 +21,7 @@ def create_review(data: dict)->bool:
                     'published_date': data["published_date"],
                     'provider': data['provider']
                 }
-    
+
     if "photos" in data:
         data_rewiew["photos"] = data["photos"]
 
@@ -32,12 +32,15 @@ def create_review(data: dict)->bool:
         data_rewiew["review_url"] = data["review_url"]
 
     serializer_review = ReviewSerializer(data = data_rewiew)
-    
-    if serializer_review.is_valid():
+
+    if not serializer_review.is_valid():
+        print("Ошибки сериализатора:", serializer_review.errors)
+        return False
+
+    try:
         serializer_review.save()
         return True
-    else:
-        print("Ошибки сериализатора:", serializer_review.errors)
+    except IntegrityError:
         return False
     
 def get_or_create_Organization(inn: str, name:str) -> Organization:

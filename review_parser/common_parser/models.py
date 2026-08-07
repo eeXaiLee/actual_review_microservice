@@ -81,6 +81,14 @@ class Review(models.Model):
         null=True, blank=True
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['branch', 'author', 'content', 'provider'],
+                name='unique_review_per_branch_author_content_provider',
+            )
+        ]
+
     def __str__(self):
         return f"{self.author}'s review for {self.branch}"
     
