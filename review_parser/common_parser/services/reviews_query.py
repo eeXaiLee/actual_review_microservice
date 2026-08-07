@@ -1,6 +1,7 @@
+import random
 from typing import Any, Iterable
 
-from django.db.models import Q, QuerySet, Case, When, Value, IntegerField
+from django.db.models import Q, QuerySet, Case, When, Value, IntegerField, Count, Avg
 
 from common_parser.models import Branch, Review
 
@@ -32,6 +33,67 @@ ALLOWED_FILTER_LOOKUPS = {
 
 SORT_CHOICES = ("newest", "oldest", "photos_first")
 DEFAULT_SORT = "newest"
+
+# что отобрать из общей отфильтрованной кучи (yandex+2gis+vlru вместе), ДО того
+# как применится sort — то есть sort просто упорядочивает уже отобранные N,
+# а pick решает, какие именно N туда попадут
+PICK_CHOICES = ("earliest", "latest", "random")
+
+PROVIDER_KEYS = ("yandex", "2gis", "vlru")
+
+
+def _select_batch(
+    reviews_qs: QuerySet[Review], *, pick: str, offset: int, limit: int | None
+) -> QuerySet[Review]:
+    if pick == "random":
+        ids = list(reviews_qs.values_list("id", flat=True))
+        sample_size = min(limit, len(ids)) if limit is not None else len(ids)
+        sampled_ids = random.sample(ids, sample_size)
+        return Review.objects.filter(pk__in=sampled_ids)
+
+    ordered = reviews_qs.order_by("published_date" if pick == "earliest" else "-published_date")
+    if limit is not None:
+        sliced = ordered[offset:offset + limit]
+    elif offset:
+        sliced = ordered[offset:]
+    else:
+        sliced = ordered
+
+    ids = list(sliced.values_list("id", flat=True))
+    return Review.objects.filter(pk__in=ids)
+
+
+def _provider_stats(
+    branches_list: list[Branch], filtered_reviews: QuerySet[Review]
+) -> dict[str, dict[str, Any]]:
+    """
+    Для каждого провайдера считаем две пары чисел по реальным отзывам в базе
+    (не по бейджу с сайта — он считается по-другому и на другой выборке):
+    review_count/review_avg — по всем отзывам без ограничений;
+    review_count_filtered/review_avg_filtered — по текущему запросу с фильтрами.
+    """
+    totals = {
+        row["provider"]: row
+        for row in Review.objects.filter(branch__in=branches_list)
+        .values("provider")
+        .annotate(cnt=Count("id"), avg=Avg("rating"))
+    }
+    filtered = {
+        row["provider"]: row
+        for row in filtered_reviews.values("provider").annotate(cnt=Count("id"), avg=Avg("rating"))
+    }
+
+    stats: dict[str, dict[str, Any]] = {}
+    for provider in PROVIDER_KEYS:
+        t = totals.get(provider)
+        f = filtered.get(provider)
+        stats[provider] = {
+            "review_count": t["cnt"] if t else 0,
+            "review_avg": round(t["avg"], 2) if t and t["avg"] is not None else None,
+            "review_count_filtered": f["cnt"] if f else 0,
+            "review_avg_filtered": round(f["avg"], 2) if f and f["avg"] is not None else None,
+        }
+    return stats
 
 
 class UnsupportedFilterError(ValueError):
@@ -142,6 +204,10 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     if sort not in SORT_CHOICES:
         sort = DEFAULT_SORT
 
+    pick = (query_params.get("pick") or "").strip().lower()
+    if pick not in PICK_CHOICES:
+        pick = None
+
     has_photos_raw = query_params.get("has_photos")
     author = query_params.get("author")
     providers_raw = (query_params.get("providers") or "").strip()
@@ -168,20 +234,27 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     if filters:
         reviews = reviews.filter(parse_filter_string(filters))
 
-    reviews = _ordered(reviews, sort=sort)
-
-    total_filtered = reviews.count()
-
-    if limit is not None:
-        page = reviews[offset:offset + limit]
-    elif offset:
-        page = reviews[offset:]
+    if pick:
+        selected = _select_batch(reviews, pick=pick, offset=offset, limit=limit)
+        page = _ordered(selected, sort=sort)
     else:
-        page = reviews
+        ordered = _ordered(reviews, sort=sort)
+        if limit is not None:
+            page = ordered[offset:offset + limit]
+        elif offset:
+            page = ordered[offset:]
+        else:
+            page = ordered
+
+    # для статистики нужен "чистый" queryset без order_by/среза — иначе Django
+    # тянет поле сортировки в GROUP BY и ломает подсчёт (каждая запись
+    # оказывается в отдельной "группе"), поэтому пересобираем по ID
+    page_ids = list(page.values_list("id", flat=True))
+    provider_stats = _provider_stats(branches_list, Review.objects.filter(pk__in=page_ids))
 
     return {
         "reviews": page,
-        "total_filtered": total_filtered,
         "offset": offset,
         "limit": limit,
+        "provider_stats": provider_stats,
     }

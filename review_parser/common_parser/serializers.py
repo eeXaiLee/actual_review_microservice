@@ -31,25 +31,35 @@ class BranchResponseSerializer(serializers.ModelSerializer):
         fields = ['id', 'address', 'organization', 'providers']
 
     def get_providers(self, branch):
+        # review_count/review_avg считаются заранее (см. reviews_query.py) по
+        # реальным отзывам в базе, а не берутся из бейджа сайта — так они
+        # никогда не разъезжаются с тем, что реально приходит в "reviews"
+        provider_stats = self.context.get('provider_stats', {})
+
+        def stats(provider_key):
+            return provider_stats.get(provider_key, {
+                'review_count': 0,
+                'review_avg': None,
+                'review_count_filtered': 0,
+                'review_avg_filtered': None,
+            })
+
         return {
             'yandex': {
                 'url': branch.yandex_map_url,
-                'review_count': branch.yandex_review_count,
-                'review_avg': branch.yandex_review_avg,
                 'parse_date': branch.yandex_parse_date,
+                **stats('yandex'),
             },
             '2gis': {
                 'url': branch.twogis_map_url,
-                'review_count': branch.twogis_review_count,
-                'review_avg': branch.twogis_review_avg,
                 'parse_date': branch.twogis_parse_date,
+                **stats('2gis'),
             },
             'vlru': {
                 'url': branch.vlru_url,
                 'org_id': branch.vlru_org_id,
-                'review_count': branch.vlru_review_count,
-                'review_avg': branch.vlru_review_avg,
                 'parse_date': branch.vlru_parse_date,
+                **stats('vlru'),
             },
         }
 

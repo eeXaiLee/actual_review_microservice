@@ -14,6 +14,7 @@ from common_parser.services.reviews_query import (
     get_reviews_response_for_branches,
     UnsupportedFilterError,
     SORT_CHOICES,
+    PICK_CHOICES,
 )
 
 
@@ -29,18 +30,17 @@ REVIEWS_RESPONSE_SCHEMA = '''
                         "id", "address",
                         "organization": {"id", "name", "inn"},
                         "providers": {
-                            "yandex": {"url", "review_count", "review_avg", "parse_date"},
-                            "2gis": {"url", "review_count", "review_avg", "parse_date"},
-                            "vlru": {"url", "org_id", "review_count", "review_avg", "parse_date"}
+                            "yandex": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
+                            "2gis": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
+                            "vlru": {"url", "org_id", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"}
                         }
                     },
                     "reviews": [
                         {"id", "author", "avatar", "video", "photos", "published_date",
                          "rating", "content", "provider", "branch", "review_url"}
                     ],
-                    "total_filtered": "сколько отзывов подходит под текущий запрос (с учётом всех фильтров)",
-                    "offset": "текущее смещение пагинации",
-                    "limit": "текущий размер страницы (null, если не задан)"
+                    "offset": "текущее смещение пагинации (параметр скрыт из формы Swagger, но принимается)",
+                    "limit": "сколько отзывов запрошено (null, если не задан)"
                             '''
 
 # google не парсится (парсер убран при рефакторинге), поэтому в список для
@@ -60,15 +60,21 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter('min_rating', openapi.IN_QUERY, description="Минимальный рейтинг отзыва (по умолчанию 4)", type=openapi.TYPE_INTEGER, required=False),
     openapi.Parameter('has_photos', openapi.IN_QUERY, description="true — только отзывы с фото, false — только без фото", type=openapi.TYPE_BOOLEAN, required=False),
     openapi.Parameter('author', openapi.IN_QUERY, description="Поиск по имени автора (частичное совпадение, без учёта регистра)", type=openapi.TYPE_STRING, required=False),
+    openapi.Parameter('limit', openapi.IN_QUERY, description="Максимальное количество отзывов в ответе. Если параметр providers не задан, отзывы выбираются из объединённой выборки по всем провайдерам филиала", type=openapi.TYPE_INTEGER, required=False),
+    openapi.Parameter(
+        'pick', openapi.IN_QUERY,
+        description="Какие именно limit отзывов взять: latest — самые новые, earliest — самые старые, random — случайные. Если не задано — работают offset/sort как обычная постраничная выдача",
+        type=openapi.TYPE_STRING,
+        enum=list(PICK_CHOICES),
+        required=False,
+    ),
     openapi.Parameter(
         'sort', openapi.IN_QUERY,
-        description="Сортировка отзывов (по умолчанию newest)",
+        description="Как расположить отобранные отзывы для показа (по умолчанию newest)",
         type=openapi.TYPE_STRING,
         enum=list(SORT_CHOICES),
         required=False,
     ),
-    openapi.Parameter('offset', openapi.IN_QUERY, description="Пагинация: смещение", type=openapi.TYPE_INTEGER, required=False),
-    openapi.Parameter('limit', openapi.IN_QUERY, description="Пагинация: количество отзывов", type=openapi.TYPE_INTEGER, required=False),
     openapi.Parameter('filters', openapi.IN_QUERY, description="Полный фильтр по полям отзыва — для случаев, не покрытых полями выше", type=openapi.TYPE_STRING, required=False),
 ]
 
@@ -101,9 +107,10 @@ def get_reviews(request):
     reviews_data = ReviewSerializer(service_result["reviews"], many=True).data
 
     data = {
-        'branch': BranchResponseSerializer(branch).data,
+        'branch': BranchResponseSerializer(
+            branch, context={'provider_stats': service_result['provider_stats']}
+        ).data,
         'reviews': reviews_data,
-        'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
         'limit': service_result["limit"],
     }
@@ -129,9 +136,10 @@ def get_reviews_by_ip(request):
 
     data = {
         'ip': ip,
-        'branches': BranchResponseSerializer(branches, many=True).data,
+        'branches': BranchResponseSerializer(
+            branches, many=True, context={'provider_stats': service_result['provider_stats']}
+        ).data,
         'reviews': reviews_data,
-        'total_filtered': service_result["total_filtered"],
         'offset': service_result["offset"],
         'limit': service_result["limit"],
     }
