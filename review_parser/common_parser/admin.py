@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Count, Avg
 from .models import Organization, Branch, Review, BranchIPMapping, Playlist, Video, PlaylistIPMapping
 from nested_admin import NestedStackedInline, NestedModelAdmin, NestedTabularInline
 from django.urls import reverse
@@ -21,15 +22,38 @@ from django_celery_results.models import TaskResult
 
 class BranchInline(NestedStackedInline):
     model = Branch
-    extra = 0 
-    show_change_link = True 
+    extra = 0
+    show_change_link = True
 
 @admin.register(Branch)
 class BranchAdmin(NestedModelAdmin):
     list_display = ('id', 'organization', 'address')
     list_filter = ('organization',)
 
-    def parsing(self, request, object_id=None):  
+    readonly_fields = (
+        'yandex_review_count_computed', 'yandex_review_avg_computed',
+        'twogis_review_count_computed', 'twogis_review_avg_computed',
+        'vlru_review_count_computed', 'vlru_review_avg_computed',
+    )
+
+    fields = (
+        'organization', 'address',
+        'google_map_url', 'yandex_map_url', 'twogis_map_url', 'vlru_url', 'vlru_org_id',
+        'google_review_count', 'google_review_avg', 'google_parse_date',
+        'yandex_review_count_computed', 'yandex_review_avg_computed', 'yandex_parse_date',
+        'twogis_review_count_computed', 'twogis_review_avg_computed', 'twogis_parse_date',
+        'vlru_parse_date', 'vlru_review_count_computed', 'vlru_review_avg_computed',
+    )
+
+    def _provider_stats(self, obj):
+        if not hasattr(obj, '_provider_stats_cache'):
+            obj._provider_stats_cache = {
+                row["provider"]: row
+                for row in obj.reviews.values("provider").annotate(cnt=Count("id"), avg=Avg("rating"))
+            }
+        return obj._provider_stats_cache
+
+    def parsing(self, request, object_id=None):
 
         parse_all_providers_async.delay(object_id)
 
@@ -68,6 +92,24 @@ class BranchAdmin(NestedModelAdmin):
 
 
     change_form_template = 'admin/branch_custom.html'
+
+
+def _make_provider_metric(provider, metric, label):
+    def method(self, obj):
+        if not obj.pk:
+            return "—"
+        row = self._provider_stats(obj).get(provider)
+        if metric == "count":
+            return row["cnt"] if row else 0
+        return round(row["avg"], 2) if row and row["avg"] is not None else "—"
+    method.short_description = label
+    return method
+
+
+for provider, field_prefix, label_prefix in (("yandex", "yandex", "Yandex"), ("2gis", "twogis", "Twogis"), ("vlru", "vlru", "Vlru")):
+    setattr(BranchAdmin, f"{field_prefix}_review_count_computed", _make_provider_metric(provider, "count", f"{label_prefix} review count"))
+    setattr(BranchAdmin, f"{field_prefix}_review_avg_computed", _make_provider_metric(provider, "avg", f"{label_prefix} review avg"))
+
 
 @admin.register(Organization)
 class OrganizationAdmin(NestedModelAdmin):
