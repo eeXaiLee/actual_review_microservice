@@ -9,7 +9,7 @@ from django.db.models import Count
 from loguru import logger
 
 from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist, Review
-from .serializers import ReviewSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
+from .serializers import ReviewResponseSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
 from common_parser.services.reviews_query import (
     get_reviews_response_for_branches,
     UnsupportedFilterError,
@@ -104,7 +104,7 @@ def get_reviews(request):
     except UnsupportedFilterError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    reviews_data = ReviewSerializer(service_result["reviews"], many=True).data
+    reviews_data = ReviewResponseSerializer(service_result["reviews"], many=True).data
 
     data = {
         'branch': BranchResponseSerializer(
@@ -132,7 +132,7 @@ def get_reviews_by_ip(request):
     except UnsupportedFilterError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    reviews_data = ReviewSerializer(service_result["reviews"], many=True).data
+    reviews_data = ReviewResponseSerializer(service_result["reviews"], many=True).data
 
     data = {
         'ip': ip,

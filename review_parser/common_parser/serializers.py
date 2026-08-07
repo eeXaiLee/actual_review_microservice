@@ -73,6 +73,24 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ReviewResponseSerializer(serializers.ModelSerializer):
+    """Отзыв для ответа API отзывов: photos — настоящий массив URL, а не
+    строка через запятую (в БД поле по-прежнему хранится как строка —
+    записью отзывов занимается ReviewSerializer выше, этот только читает)."""
+
+    rating = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+    photos = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+    def get_photos(self, review):
+        if not review.photos:
+            return []
+        return [url.strip() for url in review.photos.split(',') if url.strip()]
+
+
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
