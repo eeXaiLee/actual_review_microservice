@@ -160,8 +160,8 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
                 }
             )
             count += 1
-        except Exception:
-            print("Ошибка при добавлении ", Exception)
+        except Exception as e:
+            logger.warning(f"Yandex: не удалось разобрать отзыв: {e}")
 
         if limit and limit == count:
             break

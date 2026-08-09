@@ -1,6 +1,8 @@
 from datetime import datetime
 import re
 
+from loguru import logger
+
 RU_MONTH_NAMES_TO_NUM = {
     'январь': '01', 'января': '01',
     'февраль': '02', 'февраля': '02',
@@ -36,5 +38,5 @@ def parse_date_string(date_str):
         dt_obj = datetime.strptime(processed_date, "%d %m %Y")
         return dt_obj
     except ValueError as e:
-        print(f"Произошла ошибка при парсинге даты: {e}")
+        logger.warning(f"Произошла ошибка при парсинге даты: {e}")
         return None

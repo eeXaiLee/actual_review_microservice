@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from loguru import logger
 
 from common_parser.serializers import ReviewSerializer, OrganizationSerializer, BranchSerializer, VideoSerializer
 from common_parser.models import Review, Organization, Branch, Video, Playlist
@@ -34,7 +35,7 @@ def create_review(data: dict)->bool:
     serializer_review = ReviewSerializer(data = data_rewiew)
 
     if not serializer_review.is_valid():
-        print("Ошибки сериализатора:", serializer_review.errors)
+        logger.warning(f"create_review: ошибки сериализатора: {serializer_review.errors}")
         return False
 
     try:
@@ -120,5 +121,5 @@ def create_video(data: dict)-> bool:
         serializer_video.save()
         return True
     else:
-        print("Ошибки сериализатора:", serializer_video.errors)
+        logger.warning(f"create_video: ошибки сериализатора: {serializer_video.errors}")
         return False
