@@ -32,7 +32,7 @@ REVIEWS_RESPONSE_SCHEMA = '''
                         "providers": {
                             "yandex": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
                             "2gis": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
-                            "vlru": {"url", "org_id", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"}
+                            "vlru": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"}
                         }
                     },
                     "reviews": [

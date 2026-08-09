@@ -38,11 +38,11 @@ class BranchAdmin(NestedModelAdmin):
 
     fields = (
         'organization', 'address',
-        'google_map_url', 'yandex_map_url', 'twogis_map_url', 'vlru_url', 'vlru_org_id',
+        'google_map_url', 'yandex_map_url', 'twogis_map_url', 'vlru_url',
         'google_review_count', 'google_review_avg', 'google_parse_date',
         'yandex_review_count_computed', 'yandex_review_avg_computed', 'yandex_parse_date',
         'twogis_review_count_computed', 'twogis_review_avg_computed', 'twogis_parse_date',
-        'vlru_parse_date', 'vlru_review_count_computed', 'vlru_review_avg_computed',
+        'vlru_review_count_computed', 'vlru_review_avg_computed', 'vlru_parse_date',
     )
 
     def _provider_stats(self, obj):

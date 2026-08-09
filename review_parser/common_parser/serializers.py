@@ -57,7 +57,6 @@ class BranchResponseSerializer(serializers.ModelSerializer):
             },
             'vlru': {
                 'url': branch.vlru_url,
-                'org_id': branch.vlru_org_id,
                 'parse_date': branch.vlru_parse_date,
                 **stats('vlru'),
             },

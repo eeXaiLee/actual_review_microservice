@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-import json
 from datetime import datetime
 import re
 from common_parser.services.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
@@ -21,21 +20,9 @@ def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         review_count_name='vlru_review_count',
         review_count=dict_vlru['count'],
         review_avg_name='vlru_review_avg',
-        review_avg=-1
+        review_avg=None
     )
 
-    if branch.vlru_org_id:      
-        response = send_request_vl_avg_review(branch.vlru_org_id)
-        response_text = response.text
-        response_dict = json.loads(response_text)
-
-        for key, item in response_dict["history"].items():
-            avg = float(item)
-            if avg < 4:
-                avg = 4
-            branch.vlru_review_avg = avg 
-            break
-    
     branch.vlru_parse_date = datetime.now()
     branch.save()
 
@@ -158,18 +145,6 @@ def send_request_vl_comment(company, threadId, before):
         'Referer': f'https://www.vl.ru/{company}'
     }
     params = {'theme': 'company', 'moderatorMode': '1', 'before': f'{before}'}
-
-    response = http_get(url, headers=headers, params=params)
-
-    return response
-
-def send_request_vl_avg_review(company_id):
-    url = f'https://www.vl.ru/ajax/company-history-votes?companyId={company_id}'
-    headers = {
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'X-Requested-With': 'XMLHttpRequest',
-    }
-    params = {'companyId': company_id}
 
     response = http_get(url, headers=headers, params=params)
 

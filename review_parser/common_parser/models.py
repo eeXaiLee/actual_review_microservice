@@ -23,7 +23,6 @@ class Branch(models.Model):
     yandex_map_url = models.URLField(max_length=1500, null=True, blank=True)
     twogis_map_url = models.URLField(max_length=500, null=True, blank=True)
     vlru_url = models.URLField(max_length=500, null=True, blank=True)
-    vlru_org_id = models.CharField(max_length=16, null=True, blank=True) 
     google_review_count = models.IntegerField(null=True, blank=True)
     google_review_avg = models.FloatField(null=True, blank=True)
     google_parse_date = models.DateTimeField(blank=True, null=True)
