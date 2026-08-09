@@ -1,6 +1,7 @@
 import random
 from typing import Any, Iterable
 
+from django.core.exceptions import ValidationError
 from django.db.models import Q, QuerySet, Case, When, Value, IntegerField, Count, Avg
 
 from common_parser.models import Branch, Review
@@ -216,6 +217,11 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     offset = _parse_int(query_params.get("offset")) or 0
     limit = _parse_int(query_params.get("limit"))
 
+    if offset < 0:
+        raise UnsupportedFilterError("offset не может быть отрицательным")
+    if limit is not None and limit < 0:
+        raise UnsupportedFilterError("limit не может быть отрицательным")
+
     reviews = Review.objects.filter(branch__in=branches_list, rating__gte=min_rating)
 
     if providers_raw:
@@ -232,7 +238,14 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
         reviews = reviews.filter(author__icontains=author)
 
     if filters:
-        reviews = reviews.filter(parse_filter_string(filters))
+        try:
+            reviews = reviews.filter(parse_filter_string(filters))
+        except UnsupportedFilterError:
+            raise
+        except (ValueError, TypeError, ValidationError) as e:
+            raise UnsupportedFilterError(
+                f"Некорректное значение в filters: {e}"
+            ) from e
 
     if pick:
         selected = _select_batch(reviews, pick=pick, offset=offset, limit=limit)

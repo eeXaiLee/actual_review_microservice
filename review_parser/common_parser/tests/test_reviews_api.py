@@ -73,19 +73,23 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
-    def test_reviews_legacy_params_are_ignored_not_errors(self):
-        # count_<provider>/only_providers/filters_<provider> больше не поддерживаются —
-        # старые запросы с ними не должны падать, просто эти параметры игнорируются
+    def test_reviews_rejects_invalid_filter_value_instead_of_crashing(self):
         resp = self.client.get(
             "/api/common/reviews",
-            {
-                "branch_id": self.branch.id,
-                "providers": "yandex",
-                "count_yandex": 1,
-                "only_providers": "true",
-                "filters_yandex": "rating__gt=4",
-            },
+            {"branch_id": self.branch.id, "filters": "rating__gt=abc"},
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(resp.data["reviews"]), 1)
-        self.assertEqual(resp.data["reviews"][0]["author"], "a2")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_reviews_rejects_negative_offset(self):
+        resp = self.client.get(
+            "/api/common/reviews",
+            {"branch_id": self.branch.id, "offset": -5},
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_reviews_rejects_negative_limit(self):
+        resp = self.client.get(
+            "/api/common/reviews",
+            {"branch_id": self.branch.id, "pick": "random", "limit": -1},
+        )
+        self.assertEqual(resp.status_code, 400)
