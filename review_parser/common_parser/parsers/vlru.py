@@ -180,5 +180,4 @@ def parse(company):
         return {
                 'reviews': reviews,
                 'count': count,
-                'rating': 5,
             }
