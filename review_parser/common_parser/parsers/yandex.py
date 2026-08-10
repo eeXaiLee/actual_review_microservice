@@ -1,8 +1,8 @@
 import re
-from datetime import datetime
 from typing import Optional
 
 from bs4 import BeautifulSoup
+from django.utils import timezone
 from loguru import logger
 from playwright.sync_api import sync_playwright
 
@@ -195,7 +195,7 @@ def create_yandex_reviews(
         )
         return None
 
-    branch.yandex_parse_date = datetime.now()
+    branch.yandex_parse_date = timezone.now()
     branch.save()
 
     for d in dict_yandex["reviews"]:

@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone
 import re
+from django.utils import timezone
 from common_parser.services.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
 from common_parser.models import Branch
 from loguru import logger
@@ -31,7 +32,7 @@ def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         )
         return None
 
-    branch.vlru_parse_date = datetime.now()
+    branch.vlru_parse_date = timezone.now()
     branch.save()
 
     for d in dict_vlru['reviews']:
@@ -71,7 +72,7 @@ def parse_vlru_reviews(html_content):
             profile_id = review_item.get('data-profile-id')
             review_type = review_item.get('data-type')
             timestamp = int(review_item.get('data-timestamp'))
-            published_date = datetime.fromtimestamp(timestamp)
+            published_date = datetime.fromtimestamp(timestamp, tz=dt_timezone.utc)
             
             author_block = review_item.find('span', class_='user-name')
             author = author_block.get_text(strip=True) if author_block else "Anonymous"

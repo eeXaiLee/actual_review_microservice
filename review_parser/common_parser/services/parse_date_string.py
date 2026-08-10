@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
 
+from django.utils import timezone
 from loguru import logger
 
 RU_MONTH_NAMES_TO_NUM = {
@@ -29,14 +30,14 @@ def parse_date_string(date_str):
     """ Парсит строку формата "DD MMMM YYYY" или "DD MMMM", возвращая объект datetime. Если год отсутствует, подставляет текущий год. """
     processed_date = replace_month_with_number(date_str).strip()
     parts = processed_date.split()
-    
-    if len(parts) < 3: 
-        current_year = datetime.now().year
+
+    if len(parts) < 3:
+        current_year = timezone.now().year
         processed_date += f" {current_year}"
-        
+
     try:
         dt_obj = datetime.strptime(processed_date, "%d %m %Y")
-        return dt_obj
+        return timezone.make_aware(dt_obj)
     except ValueError as e:
         logger.warning(f"Произошла ошибка при парсинге даты: {e}")
         return None

@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from django.utils import timezone
 
 from common_parser.models import Branch, BranchIPMapping, Organization, Review
 
@@ -25,7 +27,7 @@ class ReviewsFixtureMixin:
             rating=3,
             content="c1",
             provider="yandex",
-            published_date=datetime.now() - timedelta(days=2),
+            published_date=timezone.now() - timedelta(days=2),
         )
         # newer
         Review.objects.create(
@@ -34,7 +36,7 @@ class ReviewsFixtureMixin:
             rating=5,
             content="c2",
             provider="yandex",
-            published_date=datetime.now() - timedelta(days=1),
+            published_date=timezone.now() - timedelta(days=1),
         )
         Review.objects.create(
             branch=cls.branch,
@@ -42,7 +44,7 @@ class ReviewsFixtureMixin:
             rating=4,
             content="vc1",
             provider="vlru",
-            published_date=datetime.now(),
+            published_date=timezone.now(),
         )
 
         BranchIPMapping.objects.create(branch=cls.branch, ip_address="1.2.3.4")

@@ -4,6 +4,8 @@ import time
 import re
 from datetime import datetime
 
+from django.utils import timezone
+
 from common_parser.services.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
 from common_parser.models import Branch
 from loguru import logger
@@ -25,8 +27,10 @@ def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: s
 
     try:
         published_date = datetime.fromisoformat(review_data['date_created'])
+        if timezone.is_naive(published_date):
+            published_date = timezone.make_aware(published_date)
     except (KeyError, ValueError):
-        published_date = datetime.now()
+        published_date = timezone.now()
 
     avatar_url = review_data.get('user', {}).get('photo_preview_urls', {}).get('url', '')
 
@@ -96,7 +100,7 @@ def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         )
         return None
 
-    branch.twogis_parse_date = datetime.now()
+    branch.twogis_parse_date = timezone.now()
     branch.save()
 
     cnt = 0
