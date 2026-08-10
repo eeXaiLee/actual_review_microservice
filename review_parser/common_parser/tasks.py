@@ -1,14 +1,42 @@
+from functools import wraps
+from time import perf_counter
+
 from celery import shared_task
-from django.core.mail import send_mail
-from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.http import Http404
+from loguru import logger
+
 from common_parser.services.parse_all_providers import parse_all_providers
 from common_parser.parsers.yandex import create_yandex_reviews
 from common_parser.parsers.twogis import create_2gis_reviews
 from common_parser.parsers.vlru import create_vlru_reviews
 from common_parser.models import Branch
-from django.shortcuts import get_object_or_404
-from loguru import logger
-from time import perf_counter
+
+
+def branch_task(func):
+    """
+    Декоратор для Celery-тасок вида `def task(branch): ...`, которые парсят
+    один филиал по его branch_id: сам достаёт Branch, замеряет время,
+    оборачивает результат в {"branch_id", "results"} и ловит Http404/любое
+    другое исключение с логированием.
+    """
+    @wraps(func)
+    def wrapper(branch_id):
+        t0 = perf_counter()
+        try:
+            branch = get_object_or_404(Branch, id=branch_id)
+            results = func(branch)
+            logger.info(
+                f"{func.__name__}: завершено, "
+                f"branch_id={branch_id} "
+                f"duration_ms={int((perf_counter()-t0)*1000)}"
+            )
+            return {"branch_id": branch_id, "results": results}
+        except Http404:
+            logger.error(f"Филиал не найден (id={branch_id})")
+        except Exception as e:
+            logger.exception(f"Ошибка в {func.__name__}: {e}")
+    return wrapper
 
 
 @shared_task(name='common_parser.tasks.weekly_parsing')
@@ -20,7 +48,8 @@ def weekly_parsing():
     for branch in branches:
         dict_results[f"{branch.id}"] = parse_all_providers(branch)
 
-    logger.info(f"weekly_parsing finished: branches={len(dict_results)} duration_ms={int((perf_counter()-t0)*1000)}")
+    logger.info(f"weekly_parsing: завершено, филиалов={len(dict_results)} "
+                f"duration_ms={int((perf_counter()-t0)*1000)}")
     return dict_results
 
 
@@ -34,54 +63,49 @@ def parse_all_providers_async_on_create(branch_org_id, branch_address):
         )
         result = parse_all_providers(branch)
         logger.info(
-            f"parse_all_providers_async_on_create finished: branch_id={branch.id} duration_ms={int((perf_counter()-t0)*1000)}"
+            f"parse_all_providers_async_on_create: завершено, "
+            f"branch_id={branch.id} "
+            f"duration_ms={int((perf_counter()-t0)*1000)}"
         )
         return result
     except Branch.DoesNotExist:
-        logger.error(f"Branch not found (org_id={branch_org_id}, address={branch_address})")
+        logger.error(
+            f"Филиал не найден (org_id={branch_org_id}, "
+            f"address={branch_address})"
+        )
     except Exception as e:
-        logger.exception(f"Error in parse_all_providers_async_on_create: {e}")
+        logger.exception(f"Ошибка в parse_all_providers_async_on_create: {e}")
+
 
 @shared_task(name='parse_all_providers_async')
-def parse_all_providers_async(branch_id):
-    t0 = perf_counter()
-    branch = get_object_or_404(Branch, id=branch_id)
-    results = parse_all_providers(branch)
-    logger.info(
-        f"parse_all_providers_async finished: branch_id={branch_id} duration_ms={int((perf_counter()-t0)*1000)}"
-    )
-    return {"branch_id": branch_id, "results": results}
+@branch_task
+def parse_all_providers_async(branch):
+    return parse_all_providers(branch)
+
 
 @shared_task(name='parse_yandex_async')
-def parse_yandex_async(branch_id):
-    t0 = perf_counter()
-    branch = get_object_or_404(Branch, id=branch_id)
-    results = create_yandex_reviews(
+@branch_task
+def parse_yandex_async(branch):
+    return create_yandex_reviews(
         url=branch.yandex_map_url,
         inn=branch.organization.inn,
         address=branch.address,
     )
-    logger.info(
-        f"parse_yandex_async finished: branch_id={branch_id} duration_ms={int((perf_counter()-t0)*1000)}"
-    )
-    return {"branch_id": branch_id, "results": results}
+
 
 @shared_task(name='parse_vlru_async')
-def parse_vlru_async(branch_id):
-    t0 = perf_counter()
-    branch = get_object_or_404(Branch, id=branch_id)
-    results = create_vlru_reviews(branch.vlru_url, branch.organization.inn, address=branch.address)
-    logger.info(
-        f"parse_vlru_async finished: branch_id={branch_id} duration_ms={int((perf_counter()-t0)*1000)}"
+@branch_task
+def parse_vlru_async(branch):
+    return create_vlru_reviews(
+        branch.vlru_url, branch.organization.inn, address=branch.address
     )
-    return {"branch_id": branch_id, "results": results}
+
 
 @shared_task(name='parse_2gis_async')
-def parse_2gis_async(branch_id):
-    t0 = perf_counter()
-    branch = get_object_or_404(Branch, id=branch_id)
-    results = create_2gis_reviews(url=branch.twogis_map_url, inn=branch.organization.inn, address=branch.address)
-    logger.info(
-        f"parse_2gis_async finished: branch_id={branch_id} duration_ms={int((perf_counter()-t0)*1000)}"
+@branch_task
+def parse_2gis_async(branch):
+    return create_2gis_reviews(
+        url=branch.twogis_map_url,
+        inn=branch.organization.inn,
+        address=branch.address
     )
-    return {"branch_id": branch_id, "results": results}

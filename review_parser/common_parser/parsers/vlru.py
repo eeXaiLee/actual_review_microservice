@@ -48,7 +48,6 @@ def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="",
     )
     return (len(dict_vlru['reviews']), cnt)
 
-@logger.catch
 def parse_vlru_reviews(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
@@ -158,7 +157,6 @@ def send_request_vl_comment(company, threadId, before):
 
     return response
 
-@logger.catch
 def parse(company):
 
     response = send_request_vl(company)

@@ -80,7 +80,6 @@ def _fetch_rendered_html(url: str) -> str:
         return html
 
 
-@logger.catch
 def parse(url: str, limit: Optional[int] = None) -> dict:
     logger.info(f"Yandex parse started: url={url} limit={limit}")
     html = _fetch_rendered_html(url)
@@ -177,13 +176,6 @@ def create_yandex_reviews(
     url: str, inn: str, org_name: str = "", address: str = "", count: str = 50
 ) -> int | None:
     dict_yandex = parse(url)
-
-    if dict_yandex is None:
-        dict_yandex = {
-            "count": None,
-            "rating": None,
-            "reviews": []
-        }
 
     branch = get_or_create_Branch(
         organization=get_or_create_Organization(inn, org_name),

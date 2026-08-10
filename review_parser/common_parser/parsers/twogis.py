@@ -55,7 +55,6 @@ def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: s
     return review
 
 
-@logger.catch
 def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int | None:
     dict_2gis = parse(get_api_url_from_2gis(url, count or 50))
 
@@ -134,7 +133,6 @@ def get_api_url_from_2gis_offset(url: str, limit: int = 50, offset: int = 50) ->
     return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&offset={offset}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key={TWOGIS_API_KEY}&locale=ru_RU"
 
 
-@logger.catch
 def parse(url):
     response = http_get(url)
 
