@@ -69,18 +69,20 @@ class Review(models.Model):
     avatar = models.URLField(null=True, blank=True)
     video = models.URLField(null=True, blank=True)
     photos = models.TextField(null=True, blank=True)
-    published_date = models.DateTimeField(default=now)
+    published_date = models.DateTimeField(default=now, db_index=True)
     rating = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(5)]
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        db_index=True,
     )
     content = models.TextField()
 
     review_url = models.URLField(max_length=250, null=True, blank=True)
-    
+
     provider = models.CharField(
         max_length=10,
         choices=PROVIDER_CHOICES,
-        null=True, blank=True
+        null=True, blank=True,
+        db_index=True,
     )
 
     class Meta:
@@ -93,7 +95,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.author}'s review for {self.branch}"
-    
 
 
 class BranchIPMapping(models.Model):
@@ -102,12 +103,10 @@ class BranchIPMapping(models.Model):
         on_delete=models.CASCADE,
         related_name='ip_mappings'
     )
-    ip_address = models.GenericIPAddressField()
-    
+    ip_address = models.GenericIPAddressField(db_index=True)
+
     def __str__(self):
         return f"{self.ip_address} → Филиал {self.branch.id} : {self.branch.address}"
-    
-
 
 
 class Playlist(models.Model):
@@ -149,7 +148,7 @@ class PlaylistIPMapping(models.Model):
         on_delete=models.CASCADE,
         related_name='ip_mappings_playlist'
     )
-    ip_address = models.GenericIPAddressField()
-    
+    ip_address = models.GenericIPAddressField(db_index=True)
+
     def __str__(self):
         return f"{self.ip_address} → Playlist {self.playlist.id} : {self.playlist.title}"
