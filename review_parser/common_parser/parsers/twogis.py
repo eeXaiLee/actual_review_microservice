@@ -54,7 +54,7 @@ def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: s
 
 
 @logger.catch
-def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int:
+def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int | None:
     dict_2gis = parse(get_api_url_from_2gis(url, count or 50))
 
     new_dict = [1]
@@ -75,6 +75,13 @@ def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         review_avg_name='twogis_review_avg',
         review_avg=dict_2gis['rating']
     )
+
+    if branch is None:
+        logger.error(
+            f"2GIS: не удалось создать/найти филиал (address={address}), "
+            f"отзывы не сохранены"
+        )
+        return None
 
     branch.twogis_parse_date = datetime.now()
     branch.save()

@@ -175,7 +175,7 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
 
 def create_yandex_reviews(
     url: str, inn: str, org_name: str = "", address: str = "", count: str = 50
-) -> int:
+) -> int | None:
     dict_yandex = parse(url)
 
     if dict_yandex is None:
@@ -195,6 +195,13 @@ def create_yandex_reviews(
         review_avg_name="yandex_review_avg",
         review_avg=dict_yandex["rating"],
     )
+
+    if branch is None:
+        logger.error(
+            f"Yandex: не удалось создать/найти филиал (address={address}), "
+            f"отзывы не сохранены"
+        )
+        return None
 
     branch.yandex_parse_date = datetime.now()
     branch.save()

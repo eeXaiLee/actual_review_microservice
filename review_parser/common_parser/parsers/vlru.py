@@ -6,7 +6,8 @@ from common_parser.models import Branch
 from loguru import logger
 from common_parser.services.http_client import get as http_get
 
-def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int:
+
+def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int | None:
 
     company = get_company_from_url(url)
 
@@ -22,6 +23,13 @@ def create_vlru_reviews(url: str, inn: str, org_name: str ="", address: str ="",
         review_avg_name='vlru_review_avg',
         review_avg=None
     )
+
+    if branch is None:
+        logger.error(
+            f"VL.ru: не удалось создать/найти филиал (address={address}), "
+            f"отзывы не сохранены"
+        )
+        return None
 
     branch.vlru_parse_date = datetime.now()
     branch.save()
