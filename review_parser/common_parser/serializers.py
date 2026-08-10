@@ -65,7 +65,13 @@ class BranchResponseSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
 
-    rating = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+    rating = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=1,
+        coerce_to_string=True,
+        min_value=0,
+        max_value=5
+    )
 
     class Meta:
         model = Review

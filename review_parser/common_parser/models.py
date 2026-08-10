@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -69,7 +70,9 @@ class Review(models.Model):
     video = models.URLField(null=True, blank=True)
     photos = models.TextField(null=True, blank=True)
     published_date = models.DateTimeField(default=now)
-    rating = models.PositiveSmallIntegerField()
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
     content = models.TextField()
 
     review_url = models.URLField(max_length=250, null=True, blank=True)
