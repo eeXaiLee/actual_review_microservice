@@ -18,6 +18,7 @@ cp .env.example .env
 - `DEBUG` — `True`/`False`.
 - `ALLOWED_HOSTS` — домены/IP через запятую, без пробелов.
 - `CELERY_BROKER_URL` — адрес Redis для Celery (`redis://redis:6379/0` в docker-compose, `redis://localhost:6379/0` для локального запуска).
+- `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` — обязательны, без значений по умолчанию. `POSTGRES_HOST`/`POSTGRES_PORT` по умолчанию рассчитаны на docker-compose (`postgres`/`5432`), для запуска вне docker-compose задайте `POSTGRES_HOST=localhost`.
 - `TWOGIS_API_KEY` — ключ 2GIS Public API, без него парсинг 2GIS не работает.
 
 При запуске через `docker compose up` переменные подхватываются из `.env` автоматически (`env_file:` в `docker-compose.yml`).
