@@ -87,8 +87,8 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
 
     soup = BeautifulSoup(html, "lxml")
 
-    reviews_counter = -1
-    rating_global = -1.0
+    reviews_counter = None
+    rating_global = None
 
     reviews_tab = soup.select_one(".tabs-select-view__title._name_reviews")
     if reviews_tab:
@@ -108,7 +108,7 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
             try:
                 rating_global = float(rating_text)
             except ValueError:
-                rating_global = -1.0
+                rating_global = None
 
     result: list[dict] = []
     count = 0
@@ -180,8 +180,8 @@ def create_yandex_reviews(
 
     if dict_yandex is None:
         dict_yandex = {
-            "count": 0,
-            "rating": -1,
+            "count": None,
+            "rating": None,
             "reviews": []
         }
 
