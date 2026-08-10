@@ -1,4 +1,3 @@
-import random
 from typing import Any, Iterable
 
 from django.core.exceptions import ValidationError
@@ -47,10 +46,10 @@ def _select_batch(
     reviews_qs: QuerySet[Review], *, pick: str, offset: int, limit: int | None
 ) -> QuerySet[Review]:
     if pick == "random":
-        ids = list(reviews_qs.values_list("id", flat=True))
-        sample_size = min(limit, len(ids)) if limit is not None else len(ids)
-        sampled_ids = random.sample(ids, sample_size)
-        return Review.objects.filter(pk__in=sampled_ids)
+        randomized = reviews_qs.order_by("?")
+        ids_qs = randomized.values_list("id", flat=True)
+        ids = list(ids_qs[:limit] if limit is not None else ids_qs)
+        return Review.objects.filter(pk__in=ids)
 
     ordered = reviews_qs.order_by("published_date" if pick == "earliest" else "-published_date")
     if limit is not None:
