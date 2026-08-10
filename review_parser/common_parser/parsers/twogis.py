@@ -11,6 +11,8 @@ from common_parser.services.http_client import get as http_get
 
 TWOGIS_API_KEY = os.getenv('TWOGIS_API_KEY', '')
 
+MAX_2GIS_PAGES = 20
+
 
 def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: str) -> dict:
     """
@@ -57,11 +59,23 @@ def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: s
 def create_2gis_reviews(url: str, inn: str, org_name: str ="", address: str ="", count: str = 50) -> int | None:
     dict_2gis = parse(get_api_url_from_2gis(url, count or 50))
 
-    new_dict = [1]
     try:
-        while len(new_dict):
-            new_dict = parse(get_api_url_from_2gis_offset(url, count or 50, len(dict_2gis['reviews'])))["reviews"]
+        for _ in range(MAX_2GIS_PAGES):
+            new_dict = parse(
+                get_api_url_from_2gis_offset(
+                    url,
+                    count or 50,
+                    len(dict_2gis['reviews'])
+                )
+            )["reviews"]
+            if not new_dict:
+                break
             dict_2gis['reviews'] += new_dict
+        else:
+            logger.warning(
+                f"2GIS: пагинация остановлена по потолку "
+                f"в {MAX_2GIS_PAGES} страниц (url={url})"
+            )
     except Exception:
         logger.exception("2GIS pagination failed")
 
