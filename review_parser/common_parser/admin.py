@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Q
 from .models import Organization, Branch, Review, BranchIPMapping, Playlist, Video, PlaylistIPMapping
 from nested_admin import NestedStackedInline, NestedModelAdmin, NestedTabularInline
 from django.urls import reverse
@@ -49,7 +49,9 @@ class BranchAdmin(NestedModelAdmin):
         if not hasattr(obj, '_provider_stats_cache'):
             obj._provider_stats_cache = {
                 row["provider"]: row
-                for row in obj.reviews.values("provider").annotate(cnt=Count("id"), avg=Avg("rating"))
+                for row in obj.reviews.values("provider").annotate(
+                    cnt=Count("id"), avg=Avg("rating", filter=Q(rating__gt=0))
+                )
             }
         return obj._provider_stats_cache
 

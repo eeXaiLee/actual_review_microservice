@@ -45,7 +45,7 @@ def convert_2gis_reviews_to_model_data(branch: Branch, review_data: dict, url: s
         'video': None,
         'photos': photos_str,
         'published_date': published_date,
-        'rating': review_data.get('rating', 5),
+        'rating': review_data.get('rating', 0),
         'content': review_data.get('text', ''),
         'provider': '2gis',
         'review_url': url + "/tab/reviews/review/" + review_data.get('id', ''),

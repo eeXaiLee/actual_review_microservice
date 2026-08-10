@@ -72,16 +72,22 @@ def _provider_stats(
     (не по бейджу с сайта — он считается по-другому и на другой выборке):
     review_count/review_avg — по всем отзывам без ограничений;
     review_count_filtered/review_avg_filtered — по текущему запросу с фильтрами.
+
+    rating=0 означает "оценки не было" (а не "оценка ноль") — такие отзывы
+    учитываются в review_count, но не участвуют в расчёте review_avg, чтобы
+    отсутствие оценки не занижало среднее.
     """
     totals = {
         row["provider"]: row
         for row in Review.objects.filter(branch__in=branches_list)
         .values("provider")
-        .annotate(cnt=Count("id"), avg=Avg("rating"))
+        .annotate(cnt=Count("id"), avg=Avg("rating", filter=Q(rating__gt=0)))
     }
     filtered = {
         row["provider"]: row
-        for row in filtered_reviews.values("provider").annotate(cnt=Count("id"), avg=Avg("rating"))
+        for row in filtered_reviews.values("provider").annotate(
+            cnt=Count("id"), avg=Avg("rating", filter=Q(rating__gt=0))
+        )
     }
 
     stats: dict[str, dict[str, Any]] = {}
