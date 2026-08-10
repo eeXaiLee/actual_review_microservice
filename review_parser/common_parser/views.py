@@ -122,7 +122,12 @@ def get_reviews(request):
 @api_view(['GET'])
 def get_reviews_by_ip(request):
     ip = _client_ip(request)
-    branches = [mapping.branch for mapping in BranchIPMapping.objects.filter(ip_address=ip)]
+    branches = [
+        mapping.branch
+        for mapping in BranchIPMapping.objects.filter(
+            ip_address=ip
+        ).select_related('branch')
+    ]
 
     try:
         service_result = get_reviews_response_for_branches(branches=branches, query_params=request.query_params)
@@ -147,7 +152,12 @@ def get_reviews_by_ip(request):
 @api_view(['GET'])
 def get_videos_by_ip(request):
     ip = _client_ip(request)
-    playlists = [mapping.playlist for mapping in PlaylistIPMapping.objects.filter(ip_address=ip)]
+    playlists = [
+        mapping.playlist
+        for mapping in PlaylistIPMapping.objects.filter(
+            ip_address=ip
+        ).select_related('playlist')
+    ]
 
     videos = Video.objects.filter(playlist__in=playlists)
     videos_data = VideoSerializer(videos, many=True).data
