@@ -3,10 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count
-from loguru import logger
 
 from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist, Review
 from .serializers import ReviewResponseSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
@@ -163,9 +160,3 @@ def get_videos_by_ip(request):
         'videos': videos_data,
     }
     return Response(data)
-
-
-@csrf_exempt
-def webhook(request):
-    logger.info(f"webhook received: body={request.body.decode('utf-8')}")
-    return HttpResponse(status=200)
