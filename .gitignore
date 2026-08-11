@@ -138,3 +138,6 @@ dmypy.json
 
 static/
 media/
+
+# Локальные настройки Claude Code
+.claude/
