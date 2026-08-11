@@ -69,11 +69,14 @@ class Branch(models.Model):
     def __str__(self):
         return f'{self.id} : {self.organization}: {self.address[:50]}'
 
+
 @receiver(post_save, sender=Branch)
 def notify_branch_created(sender, instance, created, **kwargs):
     if created:
         from common_parser.tasks import parse_all_providers_async_on_create
-        on_commit(lambda: parse_all_providers_async_on_create.delay(instance.organization.id, instance.address))
+        on_commit(lambda: parse_all_providers_async_on_create.delay(
+            instance.organization.id, instance.address
+        ))
 
 
 class Review(models.Model):
@@ -85,7 +88,9 @@ class Review(models.Model):
         ('vlru', 'VL.RU')
     ]
 
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name="reviews")
+    branch = models.ForeignKey(
+        Branch, on_delete=models.CASCADE, related_name="reviews"
+    )
     author = models.CharField(max_length=255)
     avatar = models.URLField(null=True, blank=True)
     video = models.URLField(null=True, blank=True)
@@ -126,7 +131,11 @@ class Playlist(models.Model):
     ]
 
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, null=True, blank=True, related_name='playlists'
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='playlists'
     )
     title = models.CharField(max_length=255, blank=True, null=True)
     count = models.PositiveIntegerField(blank=True, null=True, default=None)
@@ -141,14 +150,17 @@ class Playlist(models.Model):
     def __str__(self):
         return self.title or self.url
 
+
 class Video(models.Model):
-    url = models.URLField()
+    url = models.URLField(unique=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     author = models.CharField(max_length=255, blank=True, null=True)
     date = models.DateTimeField(blank=True, null=True)
     preview = models.URLField(max_length=1000, blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True, default=None)
-    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE, related_name='videos')
-    
+    playlist = models.ForeignKey(
+        Playlist, on_delete=models.CASCADE, related_name='videos'
+    )
+
     def __str__(self):
         return self.title or self.url
