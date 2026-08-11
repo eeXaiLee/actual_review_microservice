@@ -1,5 +1,6 @@
 Django==5.2.2
 djangorestframework==3.16.0
+djangorestframework-simplejwt==5.5.1
 drf-yasg==1.21.10
 django-nested-admin==4.1.1
 django_celery_results==2.6.0

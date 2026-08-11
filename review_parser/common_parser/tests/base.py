@@ -1,13 +1,16 @@
 from datetime import timedelta
 
+from django.contrib.auth.models import User
 from django.utils import timezone
 
-from common_parser.models import Branch, BranchIPMapping, Organization, Review
+from common_parser.models import ApiClient, Branch, Organization, Review
 
 
 class ReviewsFixtureMixin:
     """Общие тестовые данные для тестов API отзывов: одна организация,
-    один филиал и три отзыва с разными рейтингами и провайдерами."""
+    один филиал, три отзыва с разными рейтингами и провайдерами, а также
+    JWT-клиент этой организации (cls.user) и чужой филиал (cls.other_branch)
+    для проверки, что чужие данные не отдаются."""
 
     @classmethod
     def setUpTestData(cls):
@@ -47,4 +50,12 @@ class ReviewsFixtureMixin:
             published_date=timezone.now(),
         )
 
-        BranchIPMapping.objects.create(branch=cls.branch, ip_address="1.2.3.4")
+        cls.user = User.objects.create_user(username="client", password="pass12345")
+        cls.api_client_profile = ApiClient.objects.create(user=cls.user, organization=org)
+
+        other_org = Organization.objects.create(inn="987654321098", name="Other Org")
+        cls.other_branch = Branch.objects.create(organization=other_org, address="Other Addr")
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_authenticate(user=self.user)

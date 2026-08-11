@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Count
 
-from .models import Branch, BranchIPMapping, PlaylistIPMapping, Video, Playlist, Review
+from .models import Branch, Video, Playlist, Review
 from .serializers import ReviewResponseSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
 from common_parser.services.reviews_query import (
     get_reviews_response_for_branches,
@@ -15,11 +15,19 @@ from common_parser.services.reviews_query import (
 )
 
 
-def _client_ip(request) -> str:
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
+def _api_client_or_403(request):
+    """
+    Достаёт ApiClient текущего пользователя (привязан к токену). Если у
+    пользователя нет привязанного ApiClient (например, это суперюзер без
+    учётки клиента) — доступа к API отзывов/видео у него нет.
+    """
+    api_client = getattr(request.user, 'api_client', None)
+    if api_client is None:
+        return None, Response(
+            {"detail": "У пользователя нет доступа к API (не привязан клиент к организации)"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    return api_client, None
 
 
 REVIEWS_RESPONSE_SCHEMA = '''
@@ -85,6 +93,10 @@ REVIEWS_MANUAL_PARAMETERS = [
 )
 @api_view(['GET'])
 def get_reviews(request):
+    api_client, error = _api_client_or_403(request)
+    if error:
+        return error
+
     branch_id = request.query_params.get('branch_id')
     if not branch_id:
         return Response({"detail": "branch_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -95,6 +107,12 @@ def get_reviews(request):
         branch = Branch.objects.get(id=branch_id)
     except Branch.DoesNotExist:
         return Response({"detail": "Branch not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if branch.organization_id != api_client.organization_id:
+        return Response(
+            {"detail": "Филиал принадлежит другой организации"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     try:
         service_result = get_reviews_response_for_branches(branches=[branch], query_params=request.query_params)
@@ -120,14 +138,13 @@ def get_reviews(request):
     responses={200: REVIEWS_RESPONSE_SCHEMA, 400: "Некорректные данные"},
 )
 @api_view(['GET'])
-def get_reviews_by_ip(request):
-    ip = _client_ip(request)
-    branches = [
-        mapping.branch
-        for mapping in BranchIPMapping.objects.filter(
-            ip_address=ip
-        ).select_related('branch')
-    ]
+def get_organization_reviews(request):
+    """Отзывы по всем филиалам организации, к которой привязан текущий JWT-клиент."""
+    api_client, error = _api_client_or_403(request)
+    if error:
+        return error
+
+    branches = list(Branch.objects.filter(organization=api_client.organization))
 
     try:
         service_result = get_reviews_response_for_branches(branches=branches, query_params=request.query_params)
@@ -137,7 +154,6 @@ def get_reviews_by_ip(request):
     reviews_data = ReviewResponseSerializer(service_result["reviews"], many=True).data
 
     data = {
-        'ip': ip,
         'branches': BranchResponseSerializer(
             branches, many=True, context={'provider_stats': service_result['provider_stats']}
         ).data,
@@ -150,21 +166,19 @@ def get_reviews_by_ip(request):
 
 @swagger_auto_schema(method="GET", auto_schema=None)
 @api_view(['GET'])
-def get_videos_by_ip(request):
-    ip = _client_ip(request)
-    playlists = [
-        mapping.playlist
-        for mapping in PlaylistIPMapping.objects.filter(
-            ip_address=ip
-        ).select_related('playlist')
-    ]
+def get_organization_videos(request):
+    """Видео по плейлистам организации, к которой привязан текущий JWT-клиент."""
+    api_client, error = _api_client_or_403(request)
+    if error:
+        return error
+
+    playlists = list(Playlist.objects.filter(organization=api_client.organization))
 
     videos = Video.objects.filter(playlist__in=playlists)
     videos_data = VideoSerializer(videos, many=True).data
     playlist_serializer = PlaylistSerializer(playlists, many=True)
 
     data = {
-        'ip': ip,
         'playlists': playlist_serializer.data,
         'provider_videos_count': Video.objects.filter(playlist__in=playlists).values('playlist__provider').annotate(review_count=Count('id')),
         'videos': videos_data,

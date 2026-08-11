@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db.models import Count, Avg, Q
-from .models import Organization, Branch, Review, BranchIPMapping, Playlist, Video, PlaylistIPMapping
+from .models import Organization, Branch, Review, ApiClient, Playlist, Video
 from nested_admin import NestedStackedInline, NestedModelAdmin, NestedTabularInline
 from django.urls import reverse
 from django.utils.html import format_html
@@ -131,20 +131,23 @@ class ReviewAdmin(NestedModelAdmin):
     ordering = ['-published_date']        
 
 
-admin.site.register(BranchIPMapping)
+@admin.register(ApiClient)
+class ApiClientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'organization')
+    autocomplete_fields = ('user', 'organization')
 
 
 class VideoInline(NestedTabularInline):
     model = Video
-    extra = 0 
-    show_change_link = True 
+    extra = 0
+    show_change_link = True
 
 admin.site.register(Video)
-admin.site.register(PlaylistIPMapping)
 
 @admin.register(Playlist)
 class PlaylistAdmin(NestedModelAdmin):
-    list_display = ('id', 'title', 'count')
+    list_display = ('id', 'title', 'organization', 'count')
     list_filter = ('title',)
+    autocomplete_fields = ('organization',)
 
     inlines = [VideoInline]

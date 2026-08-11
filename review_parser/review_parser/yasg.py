@@ -11,9 +11,12 @@ schema_view = get_schema_view(
       description="""
 API для парсинга и получения отзывов с различных платформ (Яндекс, 2GIS, VL.RU).
 
+Доступ к отзывам — по JWT-токену: `POST /api/common/token` (логин/пароль клиента) →
+`access`/`refresh`. Токен передаётся в заголовке `Authorization: Bearer <access>`.
+
 **Основные эндпоинты:**
-- `GET /api/common/reviews` — отзывы по ID филиала
-- `GET /api/common/reviews_by_ip` — отзывы по IP (требуется Branch IP Mapping)
+- `GET /api/common/reviews` — отзывы по ID филиала (только если филиал принадлежит организации клиента)
+- `GET /api/common/organization_reviews` — отзывы по всем филиалам организации клиента
 
 **Провайдеры отзывов:** yandex, 2gis, vlru
 """,

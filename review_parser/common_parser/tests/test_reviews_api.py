@@ -93,3 +93,12 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
             {"branch_id": self.branch.id, "pick": "random", "limit": -1},
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_get_reviews_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+        resp = self.client.get("/api/common/reviews", {"branch_id": self.branch.id})
+        self.assertEqual(resp.status_code, 401)
+
+    def test_get_reviews_rejects_foreign_branch(self):
+        resp = self.client.get("/api/common/reviews", {"branch_id": self.other_branch.id})
+        self.assertEqual(resp.status_code, 403)

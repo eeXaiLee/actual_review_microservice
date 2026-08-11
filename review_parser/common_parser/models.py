@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.timezone import now
@@ -5,12 +6,32 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.transaction import on_commit
 
+
 class Organization(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     inn = models.CharField(max_length=12, null=False, blank=False, unique=True)
-    
+
     def __str__(self):
         return self.name or f'Организация #{self.id}'
+
+
+class ApiClient(models.Model):
+    """
+    Учётка клиента API: связывает пользователя Django (логин/пароль для
+    получения JWT-токена) с одной организацией. По этому токену клиент
+    видит только филиалы и отзывы своей организации.
+    """
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='api_client'
+    )
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name='api_clients'
+    )
+
+    def __str__(self):
+        return f'{self.user.username} → {self.organization}'
 
 
 class Branch(models.Model):
@@ -97,18 +118,6 @@ class Review(models.Model):
         return f"{self.author}'s review for {self.branch}"
 
 
-class BranchIPMapping(models.Model):
-    branch = models.ForeignKey(
-        Branch,
-        on_delete=models.CASCADE,
-        related_name='ip_mappings'
-    )
-    ip_address = models.GenericIPAddressField(db_index=True)
-
-    def __str__(self):
-        return f"{self.ip_address} → Филиал {self.branch.id} : {self.branch.address}"
-
-
 class Playlist(models.Model):
 
     PROVIDER_CHOICES = [
@@ -116,6 +125,9 @@ class Playlist(models.Model):
         ('vk', 'Вк'),
     ]
 
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, null=True, blank=True, related_name='playlists'
+    )
     title = models.CharField(max_length=255, blank=True, null=True)
     count = models.PositiveIntegerField(blank=True, null=True, default=None)
     url = models.URLField(unique=True)
@@ -125,7 +137,7 @@ class Playlist(models.Model):
         choices=PROVIDER_CHOICES,
         null=True, blank=True
     )
-    
+
     def __str__(self):
         return self.title or self.url
 
@@ -140,15 +152,3 @@ class Video(models.Model):
     
     def __str__(self):
         return self.title or self.url
-    
-
-class PlaylistIPMapping(models.Model):
-    playlist = models.ForeignKey(
-        Playlist,
-        on_delete=models.CASCADE,
-        related_name='ip_mappings_playlist'
-    )
-    ip_address = models.GenericIPAddressField(db_index=True)
-
-    def __str__(self):
-        return f"{self.ip_address} → Playlist {self.playlist.id} : {self.playlist.title}"

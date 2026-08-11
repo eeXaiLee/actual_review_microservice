@@ -49,17 +49,20 @@ https://www.vl.ru/art-mesh
 
 ## Получение отзывов
 
-5.	Для получения отзывов по ip создаем объект branch ip mapping:
- ![image](https://github.com/user-attachments/assets/d09da0e5-80f2-4b2c-a767-56bc6ba69c97)
+5.	Доступ к API даётся по JWT-токену. Создаём клиента:
+	- в админке создаём пользователя (Users) с логином/паролем для клиента;
+	- создаём объект `ApiClient`, привязываем к нему этого пользователя и организацию, отзывы которой клиенту можно видеть.
+6.	Клиент получает токен: `POST /api/common/token` с телом `{"username": "...", "password": "..."}` → `{"access": "...", "refresh": "..."}`. Дальше каждый запрос к API отзывов идёт с заголовком `Authorization: Bearer <access>`. Токен `access` живёт 12 часов, `refresh` — 30 дней (`POST /api/common/token/refresh` с `{"refresh": "..."}` → новый `access`).
+7.	Документация по получению данных через API: http://185.104.113.137:8000/swagger/
 
-6.	Документация по получению данных через API: http://185.104.113.137:8000/swagger/
-
-**Эндпоинты:**
-- `GET /api/common/reviews?branch_id=<id>` — отзывы по ID филиала
-- `GET /api/common/reviews_by_ip` — отзывы по IP клиента (заголовок X-Forwarded-For или REMOTE_ADDR)
+**Эндпоинты (везде нужен заголовок `Authorization: Bearer <access>`):**
+- `POST /api/common/token` — получить токен по логину/паролю
+- `POST /api/common/token/refresh` — обновить `access` по `refresh`
+- `GET /api/common/reviews?branch_id=<id>` — отзывы по ID филиала (403, если филиал принадлежит другой организации)
+- `GET /api/common/organization_reviews` — отзывы по всем филиалам организации клиента
 
 **Структура ответа:**
-- **branch** (или **branches** для get_reviews_by_ip) — данные филиала: `organization` вложенным объектом (`id`, `name`, `inn`) и `providers` — статистика по каждой площадке (`yandex`, `2gis`, `vlru`): `url`, `parse_date`, `review_count`/`review_avg` (по всем отзывам, сохранённым в базе, без учёта фильтров) и `review_count_filtered`/`review_avg_filtered` (с учётом фильтров текущего запроса).
+- **branch** (или **branches** для organization_reviews) — данные филиала: `organization` вложенным объектом (`id`, `name`, `inn`) и `providers` — статистика по каждой площадке (`yandex`, `2gis`, `vlru`): `url`, `parse_date`, `review_count`/`review_avg` (по всем отзывам, сохранённым в базе, без учёта фильтров) и `review_count_filtered`/`review_avg_filtered` (с учётом фильтров текущего запроса).
 - **reviews** — массив отзывов с учётом всех фильтров, выборки и сортировки. Поле `photos` — массив ссылок на картинки, `rating` — число.
 - **offset**, **limit** — текущие параметры пагинации.
 
@@ -107,7 +110,7 @@ https://www.vl.ru/art-mesh
 
 ## Видео (устаревшая функция)
 
-Автоматический парсинг видео из YouTube/VK-плейлистов убран из проекта при рефакторинге. Модели `Playlist`/`Video` и уже накопленные ранее данные по ним по-прежнему доступны на чтение через `GET /api/common/get_videos_by_ip` (создайте Playlist IP Mapping в админке) — эндпоинт скрыт из Swagger как неподдерживаемый, но продолжает отдавать исторические данные. Ответ содержит: `ip`, `playlists`, `provider_videos_count`, `videos`.
+Автоматический парсинг видео из YouTube/VK-плейлистов убран из проекта при рефакторинге. Модели `Playlist`/`Video` и уже накопленные ранее данные по ним по-прежнему доступны на чтение через `GET /api/common/organization_videos` (у `Playlist` в админке нужно проставить `organization` — иначе он не попадёт в выдачу ни одному клиенту) — эндпоинт скрыт из Swagger как неподдерживаемый, но продолжает отдавать исторические данные, тоже по JWT-токену. Ответ содержит: `playlists`, `provider_videos_count`, `videos`.
 
 
 ## Ручной парсинг
