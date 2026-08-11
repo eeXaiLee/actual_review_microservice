@@ -164,7 +164,61 @@ def get_organization_reviews(request):
     return Response(data)
 
 
-@swagger_auto_schema(method="GET", auto_schema=None)
+@swagger_auto_schema(
+    method="GET",
+    manual_parameters=[
+        openapi.Parameter('playlist_id', openapi.IN_QUERY, description="Идентификатор плейлиста", type=openapi.TYPE_STRING, required=True),
+    ],
+    responses={
+        200: (
+            '{"playlist": {...}, "provider_videos_count": [...], '
+            '"videos": [...]}'
+        ),
+        400: "Некорректные данные",
+    },
+)
+@api_view(['GET'])
+def get_videos(request):
+    api_client, error = _api_client_or_403(request)
+    if error:
+        return error
+
+    playlist_id = request.query_params.get('playlist_id')
+    if not playlist_id:
+        return Response({"detail": "playlist_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not playlist_id.isdigit():
+        return Response({"detail": "playlist_id must be a number"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+    except Playlist.DoesNotExist:
+        return Response({"detail": "Playlist not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if playlist.organization_id != api_client.organization_id:
+        return Response(
+            {"detail": "Плейлист принадлежит другой организации"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    videos = Video.objects.filter(playlist=playlist)
+
+    data = {
+        'playlist': PlaylistSerializer(playlist).data,
+        'provider_videos_count': videos.values('playlist__provider').annotate(review_count=Count('id')),
+        'videos': VideoSerializer(videos, many=True).data,
+    }
+    return Response(data)
+
+
+@swagger_auto_schema(
+    method="GET",
+    responses={
+        200: (
+            '{"playlists": [...], "provider_videos_count": [...], '
+            '"videos": [...]}'
+        )
+    },
+)
 @api_view(['GET'])
 def get_organization_videos(request):
     """Видео по плейлистам организации, к которой привязан текущий JWT-клиент."""
