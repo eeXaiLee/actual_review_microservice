@@ -10,7 +10,8 @@ from common_parser.services.parse_all_providers import parse_all_providers
 from common_parser.parsers.yandex import create_yandex_reviews
 from common_parser.parsers.twogis import create_2gis_reviews
 from common_parser.parsers.vlru import create_vlru_reviews
-from common_parser.models import Branch
+from common_parser.parsers.youtube import parse_youtube_videos
+from common_parser.models import Branch, Playlist
 
 
 def branch_task(func):
@@ -34,6 +35,30 @@ def branch_task(func):
             return {"branch_id": branch_id, "results": results}
         except Http404:
             logger.error(f"Филиал не найден (id={branch_id})")
+        except Exception as e:
+            logger.exception(f"Ошибка в {func.__name__}: {e}")
+    return wrapper
+
+
+def playlist_task(func):
+    """
+    Декоратор для Celery-тасок вида `def task(playlist): ...`,
+    которые парсят один плейлист по его playlist_id.
+    """
+    @wraps(func)
+    def wrapper(playlist_id):
+        t0 = perf_counter()
+        try:
+            playlist = get_object_or_404(Playlist, id=playlist_id)
+            results = func(playlist)
+            logger.info(
+                f"{func.__name__}: завершено, "
+                f"playlist_id={playlist_id} "
+                f"duration_ms={int((perf_counter()-t0)*1000)}"
+            )
+            return {"playlist_id": playlist_id, "results": results}
+        except Http404:
+            logger.error(f"Плейлист не найден (id={playlist_id})")
         except Exception as e:
             logger.exception(f"Ошибка в {func.__name__}: {e}")
     return wrapper
@@ -109,3 +134,9 @@ def parse_2gis_async(branch):
         inn=branch.organization.inn,
         address=branch.address
     )
+
+
+@shared_task(name='parse_youtube_videos_async')
+@playlist_task
+def parse_youtube_videos_async(playlist):
+    return parse_youtube_videos(playlist.url)
