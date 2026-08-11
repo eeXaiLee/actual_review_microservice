@@ -6,12 +6,12 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Review Parser API",
+      title="Review & Video Parser API",
       default_version='v1',
       description="""
-API для парсинга и получения отзывов с различных платформ (Яндекс, 2GIS, VL.RU).
+API для парсинга и получения отзывов с различных платформ (Яндекс, 2GIS, VL.RU), а также видео из YouTube-плейлистов.
 
-Доступ к отзывам — по JWT-токену: `POST /api/common/token` (логин/пароль клиента) →
+Доступ — по JWT-токену: `POST /api/common/token` (логин/пароль клиента) →
 `access`/`refresh`. Токен передаётся в заголовке `Authorization: Bearer <access>`.
 
 **Основные эндпоинты:**
@@ -21,6 +21,7 @@ API для парсинга и получения отзывов с различ
 - `GET /api/common/organization_videos` — видео по всем YouTube-плейлистам организации клиента
 
 **Провайдеры отзывов:** yandex, 2gis, vlru
+**Провайдеры видео:** youtube
 """,
       license=openapi.License(name="BSD License"),
    ),
