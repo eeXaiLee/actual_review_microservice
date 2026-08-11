@@ -14,6 +14,7 @@ from common_parser.tasks import (
     parse_2gis_async,
     parse_vlru_async,
     parse_yandex_async,
+    parse_youtube_videos_async,
 )
 from django.shortcuts import get_object_or_404
 from django_celery_results.admin import TaskResultAdmin
@@ -142,7 +143,9 @@ class VideoInline(NestedTabularInline):
     extra = 0
     show_change_link = True
 
+
 admin.site.register(Video)
+
 
 @admin.register(Playlist)
 class PlaylistAdmin(NestedModelAdmin):
@@ -151,3 +154,21 @@ class PlaylistAdmin(NestedModelAdmin):
     autocomplete_fields = ('organization',)
 
     inlines = [VideoInline]
+
+    def parsing_youtube(self, request, object_id=None):
+        parse_youtube_videos_async.delay(object_id)
+        return HttpResponseRedirect(
+            reverse_lazy('admin:common_parser_playlist_changelist')
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path(
+                '<path:object_id>/change/parse-youtube/',
+                self.admin_site.admin_view(self.parsing_youtube)
+            ),
+        ]
+        return my_urls + urls
+
+    change_form_template = 'admin/playlist_custom.html'
