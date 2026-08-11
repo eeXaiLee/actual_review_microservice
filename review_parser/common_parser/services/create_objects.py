@@ -1,8 +1,14 @@
 from django.db import IntegrityError
 from loguru import logger
 
-from common_parser.serializers import ReviewSerializer, OrganizationSerializer, BranchSerializer, VideoSerializer
-from common_parser.models import Review, Organization, Branch, Video, Playlist
+from common_parser.serializers import (
+    ReviewSerializer,
+    OrganizationSerializer,
+    BranchSerializer,
+    VideoSerializer,
+    PlaylistSerializer,
+)
+from common_parser.models import Organization, Branch, Video, Playlist
 
 
 def create_review(data: dict) -> bool:
@@ -117,42 +123,47 @@ def get_or_create_Branch(
     return branch
 
 
-def get_or_create_playlist(data: dict) -> Playlist:
+def get_or_create_playlist(data: dict) -> Playlist | None:
     playlist_url = data.get('url')
 
     try:
         playlist = Playlist.objects.get(url=playlist_url)
-
         for key, value in data.items():
             setattr(playlist, key, value)
-
         playlist.save()
         return playlist
-
     except Playlist.DoesNotExist:
-
-        new_playlist = Playlist(**data)
-        new_playlist.save()
-
-        return new_playlist
+        serializer_playlist = PlaylistSerializer(data=data)
+        if serializer_playlist.is_valid():
+            return serializer_playlist.save()
+        logger.warning(
+            f"get_or_create_playlist: ошибки сериализатора: {
+                serializer_playlist.errors
+            }"
+        )
+        return None
 
 
 def create_video(data: dict) -> bool:
-    """Создает видео, если уже есть такое возвращает False"""
-    existing_review = Video.objects.filter(
-        url=data["url"]
-    ).exists()
-
-    if existing_review:
+    """
+    Создаёт видео, если такого ещё нет (по url) — возвращает False, если уже
+    есть или не прошла валидация. Уникальность по url проверяется не только
+    заранее отдельным запросом (при параллельном парсинге это ненадёжно), но
+    и ограничением на уровне базы данных: если видео всё же успеют создать
+    параллельно, .save() упадёт с IntegrityError, и мы просто вернём False.
+    """
+    if Video.objects.filter(url=data["url"]).exists():
         return False
 
     serializer_video = VideoSerializer(data=data)
-
-    if serializer_video.is_valid():
-        serializer_video.save()
-        return True
-    else:
+    if not serializer_video.is_valid():
         logger.warning(
             f"create_video: ошибки сериализатора: {serializer_video.errors}"
         )
+        return False
+
+    try:
+        serializer_video.save()
+        return True
+    except IntegrityError:
         return False
