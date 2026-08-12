@@ -143,23 +143,25 @@ def _validate_filter_key(key: str) -> None:
     if not sep or lookup not in ALLOWED_FILTER_LOOKUPS:
         field = key
     if field not in ALLOWED_FILTER_FIELDS:
-        raise UnsupportedFilterError(f"Filtering by '{field}' is not supported")
+        raise UnsupportedFilterError(
+            f"Фильтрация по '{field}' не поддерживается"
+        )
 
 
 def parse_filter_string(filter_str: str) -> Q:
     """
-    Parse a filter string into a Django Q object.
+    Разбирает строку фильтра в объект Q для Django.
 
-    Supported:
+    Поддерживается:
     - field=value
     - field!=value
-    - field__op=value (e.g. rating__gt=4)
-    - !field__op=value (negation)
-    - field__in=1,2,3 (and negation)
+    - field__op=value (например, rating__gt=4)
+    - !field__op=value (отрицание)
+    - field__in=1,2,3 (и отрицание)
     - field__isnull=true/false
 
-    Only fields/operators from ALLOWED_FILTER_FIELDS / ALLOWED_FILTER_LOOKUPS
-    are accepted — anything else raises UnsupportedFilterError.
+    Принимаются только поля/операторы из ALLOWED_FILTER_FIELDS /
+    ALLOWED_FILTER_LOOKUPS — иначе поднимается UnsupportedFilterError.
     """
     conditions = Q()
     if not filter_str:

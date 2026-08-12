@@ -84,7 +84,7 @@ def _fetch_rendered_html(url: str) -> str:
 
 
 def parse(url: str, limit: Optional[int] = None) -> dict:
-    logger.info(f"Yandex parse started: url={url} limit={limit}")
+    logger.info(f"Yandex: начат парсинг: url={url} limit={limit}")
     html = _fetch_rendered_html(url)
 
     soup = BeautifulSoup(html, "lxml")

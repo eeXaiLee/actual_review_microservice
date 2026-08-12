@@ -29,14 +29,14 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_get_reviews_min_rating_configurable(self):
-        # default min_rating=4 hides the rating=3 review
+        # min_rating=4 по умолчанию скрывает отзыв с rating=3
         resp = self.client.get(
             "/api/common/reviews", {"branch_id": self.branch.id}
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data["reviews"]), 2)
 
-        # lowering min_rating brings it back
+        # при более низком min_rating отзыв снова появляется
         resp2 = self.client.get(
             "/api/common/reviews",
             {"branch_id": self.branch.id, "min_rating": 1},
@@ -55,6 +55,7 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
         )
         self.assertEqual(resp.status_code, 200)
         # a1 (yandex, rating 3) + a2 (yandex, rating 5) + v1 (vlru, rating 4)
+        # — все три отзыва из фикстуры
         self.assertEqual(len(resp.data["reviews"]), 3)
         providers = {r["provider"] for r in resp.data["reviews"]}
         self.assertEqual(providers, {"yandex", "vlru"})

@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 from .logging_conf import configure_logging
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR.parent / ".env")
@@ -15,13 +14,10 @@ configure_logging()
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1").split(",")
 
-
-# Application definition
 
 INSTALLED_APPS = [
     "rest_framework",
@@ -67,8 +63,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "review_parser.wsgi.application"
 
 
-# Database
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -80,8 +74,6 @@ DATABASES = {
     }
 }
 
-
-# Password validation
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -98,8 +90,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
 
 LANGUAGE_CODE = "ru"
 
@@ -136,11 +126,8 @@ SWAGGER_SETTINGS = {
 }
 
 
-# Static files (CSS, JavaScript, Images)
-
 STATIC_URL = "static/"
 
-# Default primary key field type
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

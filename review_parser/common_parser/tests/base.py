@@ -23,7 +23,6 @@ class ReviewsFixtureMixin:
             vlru_url="https://www.vl.ru/test",
         )
 
-        # older
         Review.objects.create(
             branch=cls.branch,
             author="a1",
@@ -32,7 +31,6 @@ class ReviewsFixtureMixin:
             provider="yandex",
             published_date=timezone.now() - timedelta(days=2),
         )
-        # newer
         Review.objects.create(
             branch=cls.branch,
             author="a2",

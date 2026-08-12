@@ -92,7 +92,7 @@ def create_2gis_reviews(
                 f"в {MAX_2GIS_PAGES} страниц (url={url})"
             )
     except Exception:
-        logger.exception("2GIS pagination failed")
+        logger.exception("2GIS: ошибка пагинации")
 
     branch = get_or_create_Branch(
         organization=get_or_create_Organization(inn, org_name),
@@ -187,7 +187,7 @@ def parse(url):
         response_dict = json.loads(response_text)
 
     if response_dict["meta"]["total_count"] == 0:
-        logger.error("2GIS parse failed: total_count=0")
+        logger.error("2GIS: парсинг не удался, total_count=0")
         return {"error": "parse failed"}
 
     return {

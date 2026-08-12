@@ -87,16 +87,12 @@ def parse_vlru_reviews(html_content):
 
             author_block = review_item.find("span", class_="user-name")
             author = (
-                author_block.get_text(strip=True)
-                if author_block
-                else "Anonymous"
+                author_block.get_text(strip=True) if author_block else "Аноним"
             )
 
-            # Extract avatar
             avatar_img = review_item.find("img", class_="avatar")
             avatar = avatar_img["src"] if avatar_img else None
 
-            # Extract rating
             rating = 0
             rating_wrapper = review_item.find(
                 "div", class_="cmt-rating-wrapper"
@@ -107,7 +103,6 @@ def parse_vlru_reviews(html_content):
                     rating = float(active_rating["data-value"])
                     rating *= 5
 
-            # Extract photos
             photos = ""
             images_wrapper = review_item.find(
                 "div", class_="comment-images-wrapper"
@@ -116,7 +111,6 @@ def parse_vlru_reviews(html_content):
                 items = images_wrapper.find_all("div", class_="item")
                 photos = ",".join([item.find("a")["href"] for item in items])
 
-            # Extract content
             comment_text = review_item.find("p", class_="comment-text")
             content = (
                 comment_text.get_text(separator=" ", strip=True)
@@ -124,7 +118,6 @@ def parse_vlru_reviews(html_content):
                 else ""
             )
 
-            # Create review dictionary
             review = {
                 "author": author,
                 "avatar": avatar,
@@ -139,7 +132,7 @@ def parse_vlru_reviews(html_content):
             reviews.append(review)
 
         except Exception as e:
-            logger.warning(f"VL parse review failed: {e}")
+            logger.warning(f"VL.ru: не удалось разобрать отзыв: {e}")
             continue
 
     return reviews
@@ -203,7 +196,9 @@ def parse(company):
             reviews = reviews + parse_vlru_reviews(data["data"]["content"])
 
         count = len(reviews)
-        logger.info(f"VL parsed reviews: company={company} count={count}")
+        logger.info(
+            f"VL.ru: разобрано отзывов: company={company} count={count}"
+        )
 
         return {
             "reviews": reviews,

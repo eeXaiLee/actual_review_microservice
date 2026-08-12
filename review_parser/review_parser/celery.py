@@ -30,7 +30,7 @@ app.conf.beat_schedule = {
         "task": "common_parser.tasks.weekly_parsing",
         "schedule": crontab(hour=6, minute=0, day_of_week="sun"),
     },
-    # Disable cleanup task by scheduling to run every ~1000 years
+    # Отключаем встроенную задачу очистки, назначив запуск раз в ~1000 лет
     "backend_cleanup": {
         "task": "celery.backend_cleanup",
         "schedule": timedelta(days=365 * 1000),
