@@ -1,9 +1,9 @@
 import os
+from datetime import timedelta
+
 from celery import Celery
 from celery.schedules import crontab
 from dotenv import load_dotenv
-from datetime import timedelta
-
 
 load_dotenv()
 
@@ -18,11 +18,11 @@ app.conf.broker_connection_max_retries = 1
 
 
 app.conf.broker_transport_options = {
-    'visibility_timeout': 3600, 
-    'socket_connect_timeout': 10, 
-    'socket_keepalive': True,     
-    'retry_on_timeout': True,    
-    'max_retries': 3,             
+    'visibility_timeout': 3600,
+    'socket_connect_timeout': 10,
+    'socket_keepalive': True,
+    'retry_on_timeout': True,
+    'max_retries': 3,
 }
 # Настройка периодических задач
 app.conf.beat_schedule = {

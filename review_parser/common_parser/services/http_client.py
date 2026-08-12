@@ -7,7 +7,6 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
 DEFAULT_TIMEOUT_S = float(os.getenv("HTTP_TIMEOUT_S", "15"))
 
 

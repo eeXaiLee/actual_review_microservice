@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Organization, Branch, Review, Video, Playlist
+
+from .models import Branch, Organization, Playlist, Review, Video
+
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:

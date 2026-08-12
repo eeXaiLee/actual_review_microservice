@@ -1,17 +1,23 @@
+from django.db.models import Count
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.db.models import Count
 
-from .models import Branch, Video, Playlist, Review
-from .serializers import ReviewResponseSerializer, BranchResponseSerializer, VideoSerializer, PlaylistSerializer
 from common_parser.services.reviews_query import (
-    get_reviews_response_for_branches,
-    UnsupportedFilterError,
-    SORT_CHOICES,
     PICK_CHOICES,
+    SORT_CHOICES,
+    UnsupportedFilterError,
+    get_reviews_response_for_branches,
+)
+
+from .models import Branch, Playlist, Review, Video
+from .serializers import (
+    BranchResponseSerializer,
+    PlaylistSerializer,
+    ReviewResponseSerializer,
+    VideoSerializer,
 )
 
 

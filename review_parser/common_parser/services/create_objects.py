@@ -1,14 +1,14 @@
 from django.db import IntegrityError
 from loguru import logger
 
+from common_parser.models import Branch, Organization, Playlist, Video
 from common_parser.serializers import (
-    ReviewSerializer,
-    OrganizationSerializer,
     BranchSerializer,
-    VideoSerializer,
+    OrganizationSerializer,
     PlaylistSerializer,
+    ReviewSerializer,
+    VideoSerializer,
 )
-from common_parser.models import Organization, Branch, Video, Playlist
 
 
 def create_review(data: dict) -> bool:

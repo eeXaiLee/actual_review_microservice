@@ -1,6 +1,6 @@
 import os
-from loguru import logger
 
+from loguru import logger
 
 _CONFIGURED = False
 

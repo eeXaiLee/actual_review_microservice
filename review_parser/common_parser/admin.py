@@ -1,24 +1,22 @@
 from django.contrib import admin
-from django.db.models import Count, Avg, Q
-from .models import Organization, Branch, Review, ApiClient, Playlist, Video
-from nested_admin import NestedStackedInline, NestedModelAdmin, NestedTabularInline
-from django.urls import reverse
-from django.utils.html import format_html
-from django.urls import path
-from django.http import HttpResponse
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.db.models import Avg, Count, Q
 from django.http import HttpResponseRedirect
+from django.urls import path, reverse_lazy
+from nested_admin import (
+    NestedModelAdmin,
+    NestedStackedInline,
+    NestedTabularInline,
+)
+
 from common_parser.tasks import (
-    parse_all_providers_async,
     parse_2gis_async,
+    parse_all_providers_async,
     parse_vlru_async,
     parse_yandex_async,
     parse_youtube_videos_async,
 )
-from django.shortcuts import get_object_or_404
-from django_celery_results.admin import TaskResultAdmin
-from django_celery_results.models import TaskResult
+
+from .models import ApiClient, Branch, Organization, Playlist, Review, Video
 
 
 class BranchInline(NestedStackedInline):
@@ -61,22 +59,22 @@ class BranchAdmin(NestedModelAdmin):
         parse_all_providers_async.delay(object_id)
 
         return HttpResponseRedirect(reverse_lazy('admin:common_parser_branch_changelist'))
-    
-    def parsing_yandex(self, request, object_id=None):  
+
+    def parsing_yandex(self, request, object_id=None):
 
         parse_yandex_async.delay(object_id)
         #branch = get_object_or_404(Branch, id=object_id)
         #create_yandex_reviews(url=branch.yandex_map_url, inn=branch.organization.inn, address=branch.address)
 
         return HttpResponseRedirect(reverse_lazy('admin:common_parser_branch_changelist'))
-    
-    def parsing_2gis(self, request, object_id=None):  
+
+    def parsing_2gis(self, request, object_id=None):
 
         parse_2gis_async.delay(object_id)
 
         return HttpResponseRedirect(reverse_lazy('admin:common_parser_branch_changelist'))
-    
-    def parsing_vlru(self, request, object_id=None):  
+
+    def parsing_vlru(self, request, object_id=None):
 
         parse_vlru_async.delay(object_id)
 
@@ -116,20 +114,20 @@ for provider, field_prefix, label_prefix in (("yandex", "yandex", "Yandex"), ("2
 
 @admin.register(Organization)
 class OrganizationAdmin(NestedModelAdmin):
-    list_display = ('id', 'name', 'inn')  
-    search_fields = ['name']        
+    list_display = ('id', 'name', 'inn')
+    search_fields = ['name']
     ordering = ['id']
-    inlines = [BranchInline] 
+    inlines = [BranchInline]
 
 
 
 @admin.register(Review)
 class ReviewAdmin(NestedModelAdmin):
     list_display = ('id', 'branch', 'author', 'rating', 'published_date')
-    list_filter = ('branch', 'rating')     
-    search_fields = ['author', 'content']  
-    date_hierarchy = 'published_date'      
-    ordering = ['-published_date']        
+    list_filter = ('branch', 'rating')
+    search_fields = ['author', 'content']
+    date_hierarchy = 'published_date'
+    ordering = ['-published_date']
 
 
 @admin.register(ApiClient)

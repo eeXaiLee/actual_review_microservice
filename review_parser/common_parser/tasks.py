@@ -2,16 +2,16 @@ from functools import wraps
 from time import perf_counter
 
 from celery import shared_task
-from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from loguru import logger
 
-from common_parser.services.parse_all_providers import parse_all_providers
-from common_parser.parsers.yandex import create_yandex_reviews
+from common_parser.models import Branch, Playlist
 from common_parser.parsers.twogis import create_2gis_reviews
 from common_parser.parsers.vlru import create_vlru_reviews
+from common_parser.parsers.yandex import create_yandex_reviews
 from common_parser.parsers.youtube import parse_youtube_videos
-from common_parser.models import Branch, Playlist
+from common_parser.services.parse_all_providers import parse_all_providers
 
 
 def branch_task(func):

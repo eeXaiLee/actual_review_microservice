@@ -1,14 +1,18 @@
 import json
 import os
-import time
 import re
+import time
 from datetime import datetime
 
 from django.utils import timezone
-
-from common_parser.services.create_objects import get_or_create_Branch, get_or_create_Organization, create_review
-from common_parser.models import Branch
 from loguru import logger
+
+from common_parser.models import Branch
+from common_parser.services.create_objects import (
+    create_review,
+    get_or_create_Branch,
+    get_or_create_Organization,
+)
 from common_parser.services.http_client import get as http_get
 
 TWOGIS_API_KEY = os.getenv('TWOGIS_API_KEY', '')

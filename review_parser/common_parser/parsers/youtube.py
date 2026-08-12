@@ -8,7 +8,8 @@ from googleapiclient.errors import HttpError
 from loguru import logger
 
 from common_parser.services.create_objects import (
-    create_video, get_or_create_playlist
+    create_video,
+    get_or_create_playlist,
 )
 
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')

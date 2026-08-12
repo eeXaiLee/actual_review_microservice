@@ -1,10 +1,18 @@
 from typing import Any, Iterable
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q, QuerySet, Case, When, Value, IntegerField, Count, Avg
+from django.db.models import (
+    Avg,
+    Case,
+    Count,
+    IntegerField,
+    Q,
+    QuerySet,
+    Value,
+    When,
+)
 
 from common_parser.models import Branch, Review
-
 
 DEFAULT_MIN_RATING = 4
 

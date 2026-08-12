@@ -1,8 +1,8 @@
 from loguru import logger
 
 from common_parser.parsers.twogis import create_2gis_reviews
-from common_parser.parsers.yandex import create_yandex_reviews
 from common_parser.parsers.vlru import create_vlru_reviews
+from common_parser.parsers.yandex import create_yandex_reviews
 
 
 def parse_all_providers(branch):
