@@ -125,7 +125,7 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
         avatar_img_url = ""
         avatar_el = review_block.select_one(".user-icon-view__icon")
         if avatar_el:
-            style_attr = avatar_el.get("style", "")
+            style_attr = str(avatar_el.get("style", ""))
             match = re.search(r'url\(["\']?(.*?)["\']?\)', style_attr)
             if match:
                 avatar_img_url = match.group(1).strip('"')
@@ -147,7 +147,7 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
         for photo in photos_obj:
             src = photo.get("src")
             if src:
-                image_srcs.append(src)
+                image_srcs.append(str(src))
         photos = ", ".join(image_srcs)
 
         stars_count = len(
@@ -186,8 +186,8 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
 
 
 def create_yandex_reviews(
-    url: str, inn: str, org_name: str = "", address: str = "", count: str = 50
-) -> int | None:
+    url: str, inn: str, org_name: str = "", address: str = "", count: int = 50
+) -> tuple[int, int] | None:
     dict_yandex = parse(url)
 
     branch = get_or_create_Branch(

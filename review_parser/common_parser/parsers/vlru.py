@@ -15,10 +15,12 @@ from common_parser.services.http_client import get as http_get
 
 
 def create_vlru_reviews(
-    url: str, inn: str, org_name: str = "", address: str = "", count: str = 50
-) -> int | None:
-
+    url: str, inn: str, org_name: str = "", address: str = "", count: int = 50
+) -> tuple[int, int] | None:
     company = get_company_from_url(url)
+    if company is None:
+        logger.error(f"VL.ru: не удалось разобрать ссылку на филиал: {url}")
+        return None
 
     dict_vlru = parse(company)
 
@@ -143,7 +145,7 @@ def parse_vlru_reviews(html_content):
     return reviews
 
 
-def get_company_from_url(url: str) -> str:
+def get_company_from_url(url: str) -> str | None:
     match = re.search(r"/([^/]+)$", url)
     if match:
         return match.group(1)

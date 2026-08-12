@@ -78,14 +78,14 @@ def get_or_create_Organization(inn: str, name: str) -> Organization | None:
 
 
 def get_or_create_Branch(
-    organization: Organization,
+    organization: Organization | None,
     address: str,
     url_name: str,
     url: str,
     review_count_name: str,
-    review_count: str,
+    review_count: str | int | float | None,
     review_avg_name: str,
-    review_avg: str,
+    review_avg: str | int | float | None,
 ) -> Branch | None:
     if organization is None:
         logger.warning(

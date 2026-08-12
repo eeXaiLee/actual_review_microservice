@@ -132,8 +132,7 @@ REVIEWS_MANUAL_PARAMETERS = [
         "sort",
         openapi.IN_QUERY,
         description=(
-            "Как расположить отобранные отзывы для показа "
-            "(по умолчанию newest)"
+            "Как расположить отобранные отзывы для показа (по умолчанию newest)"
         ),
         type=openapi.TYPE_STRING,
         enum=list(SORT_CHOICES),
@@ -210,9 +209,7 @@ def get_reviews(request):
 
     data = {
         "branch": BranchResponseSerializer(
-            branch, context={
-                "provider_stats": service_result["provider_stats"]
-            }
+            branch, context={"provider_stats": service_result["provider_stats"]}
         ).data,
         "reviews": reviews_data,
         "offset": service_result["offset"],
@@ -233,9 +230,7 @@ def get_organization_reviews(request):
     if error:
         return error
 
-    branches = list(
-        Branch.objects.filter(organization=api_client.organization)
-    )
+    branches = list(Branch.objects.filter(organization=api_client.organization))
 
     try:
         service_result = get_reviews_response_for_branches(

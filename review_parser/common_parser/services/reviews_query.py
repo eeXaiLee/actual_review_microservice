@@ -143,9 +143,7 @@ def _validate_filter_key(key: str) -> None:
     if not sep or lookup not in ALLOWED_FILTER_LOOKUPS:
         field = key
     if field not in ALLOWED_FILTER_FIELDS:
-        raise UnsupportedFilterError(
-            f"Filtering by '{field}' is not supported"
-        )
+        raise UnsupportedFilterError(f"Filtering by '{field}' is not supported")
 
 
 def parse_filter_string(filter_str: str) -> Q:
@@ -278,14 +276,12 @@ def get_reviews_response_for_branches(
             ) from e
 
     if pick:
-        selected = _select_batch(
-            reviews, pick=pick, offset=offset, limit=limit
-        )
+        selected = _select_batch(reviews, pick=pick, offset=offset, limit=limit)
         page = _ordered(selected, sort=sort)
     else:
         ordered = _ordered(reviews, sort=sort)
         if limit is not None:
-            page = ordered[offset : offset + limit]
+            page = ordered[offset: offset + limit]
         elif offset:
             page = ordered[offset:]
         else:

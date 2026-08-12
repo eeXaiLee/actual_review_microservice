@@ -39,10 +39,7 @@ def convert_2gis_reviews_to_model_data(
         published_date = timezone.now()
 
     avatar_url = (
-        review_data
-        .get("user", {})
-        .get("photo_preview_urls", {})
-        .get("url", "")
+        review_data.get("user", {}).get("photo_preview_urls", {}).get("url", "")
     )
 
     photos_pr = review_data.get("photos", [])
@@ -71,17 +68,21 @@ def convert_2gis_reviews_to_model_data(
 
 
 def create_2gis_reviews(
-    url: str, inn: str, org_name: str = "", address: str = "", count: str = 50
-) -> int | None:
-    dict_2gis = parse(get_api_url_from_2gis(url, count or 50))
+    url: str, inn: str, org_name: str = "", address: str = "", count: int = 50
+) -> tuple[int, int] | None:
+    api_url = get_api_url_from_2gis(url, count or 50)
+    if api_url is None:
+        logger.error(f"2GIS: не удалось разобрать ссылку на филиал: {url}")
+        return None
+
+    dict_2gis = parse(api_url)
 
     try:
         for _ in range(MAX_2GIS_PAGES):
-            new_dict = parse(
-                get_api_url_from_2gis_offset(
-                    url, count or 50, len(dict_2gis["reviews"])
-                )
-            )["reviews"]
+            offset_url = get_api_url_from_2gis_offset(
+                url, count or 50, len(dict_2gis["reviews"])
+            )
+            new_dict = parse(offset_url)["reviews"] if offset_url else []
             if not new_dict:
                 break
             dict_2gis["reviews"] += new_dict
@@ -132,7 +133,7 @@ def create_2gis_reviews(
     return (len(dict_2gis["reviews"]), cnt)
 
 
-def get_api_url_from_2gis(url: str, limit: int = 50) -> str:
+def get_api_url_from_2gis(url: str, limit: int = 50) -> str | None:
 
     pattern = r"/firm/(\d+)"
     match = re.search(pattern, url)
@@ -145,7 +146,7 @@ def get_api_url_from_2gis(url: str, limit: int = 50) -> str:
 
 def get_api_url_from_2gis_offset(
     url: str, limit: int = 50, offset: int = 50
-) -> str:
+) -> str | None:
 
     pattern = r"/firm/(\d+)"
     match = re.search(pattern, url)
