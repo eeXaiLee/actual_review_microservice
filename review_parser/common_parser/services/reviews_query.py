@@ -63,7 +63,7 @@ def _select_batch(
         "published_date" if pick == "earliest" else "-published_date"
     )
     if limit is not None:
-        sliced = ordered[offset: offset + limit]
+        sliced = ordered[offset : offset + limit]
     elif offset:
         sliced = ordered[offset:]
     else:
@@ -281,7 +281,7 @@ def get_reviews_response_for_branches(
     else:
         ordered = _ordered(reviews, sort=sort)
         if limit is not None:
-            page = ordered[offset: offset + limit]
+            page = ordered[offset : offset + limit]
         elif offset:
             page = ordered[offset:]
         else:

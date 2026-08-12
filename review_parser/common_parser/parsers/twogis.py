@@ -141,7 +141,13 @@ def get_api_url_from_2gis(url: str, limit: int = 50) -> str | None:
         firm_id = match.group(1)
     else:
         return None
-    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key={TWOGIS_API_KEY}&locale=ru_RU"
+    return (
+        f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews"
+        f"?limit={limit}&is_advertiser=true"
+        f"&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count"
+        f"&without_my_first_review=false&rated=true&sort_by=date_edited"
+        f"&key={TWOGIS_API_KEY}&locale=ru_RU"
+    )
 
 
 def get_api_url_from_2gis_offset(
@@ -154,7 +160,13 @@ def get_api_url_from_2gis_offset(
         firm_id = match.group(1)
     else:
         return None
-    return f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews?limit={limit}&offset={offset}&is_advertiser=true&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count&without_my_first_review=false&rated=true&sort_by=date_edited&key={TWOGIS_API_KEY}&locale=ru_RU"
+    return (
+        f"https://public-api.reviews.2gis.com/2.0/branches/{firm_id}/reviews"
+        f"?limit={limit}&offset={offset}&is_advertiser=true"
+        f"&fields=meta.branch_rating,meta.branch_reviews_count,meta.total_count"
+        f"&without_my_first_review=false&rated=true&sort_by=date_edited"
+        f"&key={TWOGIS_API_KEY}&locale=ru_RU"
+    )
 
 
 def parse(url):
