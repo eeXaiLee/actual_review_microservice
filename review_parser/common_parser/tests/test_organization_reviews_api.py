@@ -4,7 +4,7 @@ from .base import ReviewsFixtureMixin
 
 
 class OrganizationReviewsApiTests(ReviewsFixtureMixin, APITestCase):
-    """Тесты GET /api/common/organization_reviews (все филиалы организации клиента)."""
+    """Тесты GET /api/common/organization_reviews (все филиалы организации)."""
 
     def test_organization_reviews(self):
         resp = self.client.get("/api/common/organization_reviews")

@@ -39,7 +39,10 @@ def convert_2gis_reviews_to_model_data(
         published_date = timezone.now()
 
     avatar_url = (
-        review_data.get("user", {}).get("photo_preview_urls", {}).get("url", "")
+        review_data
+        .get("user", {})
+        .get("photo_preview_urls", {})
+        .get("url", "")
     )
 
     photos_pr = review_data.get("photos", [])
@@ -121,8 +124,10 @@ def create_2gis_reviews(
         ):
             cnt += 1
 
+    parsed_count = len(dict_2gis.get("reviews", []))
     logger.info(
-        f"2GIS create finished: url={url} branch_address={address} parsed={len(dict_2gis.get('reviews', []))} created={cnt}"
+        f"2GIS create finished: url={url} branch_address={address} "
+        f"parsed={parsed_count} created={cnt}"
     )
     return (len(dict_2gis["reviews"]), cnt)
 

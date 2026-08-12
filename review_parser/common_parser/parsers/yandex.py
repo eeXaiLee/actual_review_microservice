@@ -220,7 +220,9 @@ def create_yandex_reviews(
         if create_review(review):
             cnt += 1
 
+    parsed_count = len(dict_yandex["reviews"])
     logger.info(
-        f"Yandex create finished: url={url} branch_address={address} parsed={len(dict_yandex['reviews'])} created={cnt}"
+        f"Yandex create finished: url={url} branch_address={address} "
+        f"parsed={parsed_count} created={cnt}"
     )
     return (len(dict_yandex["reviews"]), cnt)

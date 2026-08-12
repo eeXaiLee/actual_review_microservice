@@ -22,7 +22,8 @@ def parse_all_providers(branch):
                 success_count += 1
     except Exception as e:
         logger.exception(
-            f"parse_all_providers: ошибка парсинга 2gis для branch_id={branch.id}: {e}"
+            f"parse_all_providers: ошибка парсинга 2gis "
+            f"для branch_id={branch.id}: {e}"
         )
 
     try:
@@ -37,7 +38,8 @@ def parse_all_providers(branch):
                 success_count += 1
     except Exception as e:
         logger.exception(
-            f"parse_all_providers: ошибка парсинга vlru для branch_id={branch.id}: {e}"
+            f"parse_all_providers: ошибка парсинга vlru "
+            f"для branch_id={branch.id}: {e}"
         )
 
     try:
@@ -52,7 +54,8 @@ def parse_all_providers(branch):
                 success_count += 1
     except Exception as e:
         logger.exception(
-            f"parse_all_providers: ошибка парсинга yandex для branch_id={branch.id}: {e}"
+            f"parse_all_providers: ошибка парсинга yandex "
+            f"для branch_id={branch.id}: {e}"
         )
 
     dict_results["tryes"] = try_count

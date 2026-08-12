@@ -80,7 +80,8 @@ def _provider_stats(
     Для каждого провайдера считаем две пары чисел по реальным отзывам в базе
     (не по бейджу с сайта — он считается по-другому и на другой выборке):
     review_count/review_avg — по всем отзывам без ограничений;
-    review_count_filtered/review_avg_filtered — по текущему запросу с фильтрами.
+    review_count_filtered/review_avg_filtered — по текущему запросу
+    с фильтрами.
 
     rating=0 означает "оценки не было" (а не "оценка ноль") — такие отзывы
     учитываются в review_count, но не участвуют в расчёте review_avg, чтобы
@@ -117,7 +118,9 @@ def _provider_stats(
 
 
 class UnsupportedFilterError(ValueError):
-    """Клиент запросил фильтр по полю/оператору, которого нет в белом списке."""
+    """
+    Клиент запросил фильтр по полю/оператору, которого нет в белом списке.
+    """
 
 
 def _parse_bool(value: str | None, default: bool = False) -> bool:
@@ -140,7 +143,9 @@ def _validate_filter_key(key: str) -> None:
     if not sep or lookup not in ALLOWED_FILTER_LOOKUPS:
         field = key
     if field not in ALLOWED_FILTER_FIELDS:
-        raise UnsupportedFilterError(f"Filtering by '{field}' is not supported")
+        raise UnsupportedFilterError(
+            f"Filtering by '{field}' is not supported"
+        )
 
 
 def parse_filter_string(filter_str: str) -> Q:
@@ -155,8 +160,8 @@ def parse_filter_string(filter_str: str) -> Q:
     - field__in=1,2,3 (and negation)
     - field__isnull=true/false
 
-    Only fields/operators from ALLOWED_FILTER_FIELDS / ALLOWED_FILTER_LOOKUPS are
-    accepted — anything else raises UnsupportedFilterError.
+    Only fields/operators from ALLOWED_FILTER_FIELDS / ALLOWED_FILTER_LOOKUPS
+    are accepted — anything else raises UnsupportedFilterError.
     """
     conditions = Q()
     if not filter_str:
@@ -273,7 +278,9 @@ def get_reviews_response_for_branches(
             ) from e
 
     if pick:
-        selected = _select_batch(reviews, pick=pick, offset=offset, limit=limit)
+        selected = _select_batch(
+            reviews, pick=pick, offset=offset, limit=limit
+        )
         page = _ordered(selected, sort=sort)
     else:
         ordered = _ordered(reviews, sort=sort)

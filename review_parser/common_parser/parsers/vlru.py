@@ -52,8 +52,10 @@ def create_vlru_reviews(
         if create_review(review):
             cnt += 1
 
+    parsed_count = len(dict_vlru.get("reviews", []))
     logger.info(
-        f"VL create finished: url={url} branch_address={address} parsed={len(dict_vlru.get('reviews', []))} created={cnt}"
+        f"VL create finished: url={url} branch_address={address} "
+        f"parsed={parsed_count} created={cnt}"
     )
     return (len(dict_vlru["reviews"]), cnt)
 
@@ -76,10 +78,6 @@ def parse_vlru_reviews(html_content):
             if not review_item.get("comment"):
                 continue
 
-            comment_id = review_item.get("comment")
-            # print(comment_id)
-            profile_id = review_item.get("data-profile-id")
-            review_type = review_item.get("data-type")
             timestamp = int(review_item.get("data-timestamp"))
             published_date = datetime.fromtimestamp(
                 timestamp, tz=dt_timezone.utc
@@ -122,12 +120,6 @@ def parse_vlru_reviews(html_content):
                 comment_text.get_text(separator=" ", strip=True)
                 if comment_text
                 else ""
-            )
-
-            # Extract likes count
-            likes_block = review_item.find("span", class_="likes")
-            likes_count = (
-                int(likes_block.get("data-like-count", 0)) if likes_block else 0
             )
 
             # Create review dictionary

@@ -31,34 +31,40 @@ def _api_client_or_403(request):
     if api_client is None:
         return None, Response(
             {
-                "detail": "У пользователя нет доступа к API (не привязан клиент к организации)"
+                "detail": (
+                    "У пользователя нет доступа к API "
+                    "(не привязан клиент к организации)"
+                )
             },
             status=status.HTTP_403_FORBIDDEN,
         )
     return api_client, None
 
 
-REVIEWS_RESPONSE_SCHEMA = """
-                    "branch": {
-                        "id", "address",
-                        "organization": {"id", "name", "inn"},
-                        "providers": {
-                            "yandex": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
-                            "2gis": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"},
-                            "vlru": {"url", "parse_date", "review_count", "review_avg", "review_count_filtered", "review_avg_filtered"}
-                        }
-                    },
-                    "reviews": [
-                        {"id", "author", "avatar", "video", "photos", "published_date",
-                         "rating", "content", "provider", "branch", "review_url"}
-                    ],
-                    "offset": "текущее смещение пагинации (параметр скрыт из формы Swagger, но принимается)",
-                    "limit": "сколько отзывов запрошено (null, если не задан)"
-                            """
+_PROVIDER_STATS_FIELDS = (
+    '"url", "parse_date", "review_count", "review_avg", '
+    '"review_count_filtered", "review_avg_filtered"'
+)
 
-# google не парсится (парсер убран при рефакторинге), поэтому в список для
-# фильтра его не включаем — иначе в дропдауне будет вариант, который никогда
-# не вернёт ни одного отзыва
+REVIEWS_RESPONSE_SCHEMA = f"""
+"branch": {{
+    "id", "address",
+    "organization": {{"id", "name", "inn"}},
+    "providers": {{
+        "yandex": {{{_PROVIDER_STATS_FIELDS}}},
+        "2gis": {{{_PROVIDER_STATS_FIELDS}}},
+        "vlru": {{{_PROVIDER_STATS_FIELDS}}}
+    }}
+}},
+"reviews": [
+    {{"id", "author", "avatar", "video", "photos", "published_date",
+     "rating", "content", "provider", "branch", "review_url"}}
+],
+"offset": "текущее смещение пагинации
+(скрыт из формы Swagger, но принимается)",
+"limit": "сколько отзывов запрошено (null, если не задан)"
+"""
+
 PROVIDER_VALUES = [
     choice[0] for choice in Review.PROVIDER_CHOICES if choice[0] != "google"
 ]
@@ -67,7 +73,10 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter(
         "providers",
         openapi.IN_QUERY,
-        description="Провайдеры, отзывы которых нужно вернуть (если не задано — все провайдеры филиала)",
+        description=(
+            "Провайдеры, отзывы которых нужно вернуть "
+            "(если не задано — все провайдеры филиала)"
+        ),
         type=openapi.TYPE_ARRAY,
         items=openapi.Items(type=openapi.TYPE_STRING, enum=PROVIDER_VALUES),
         collection_format="csv",
@@ -90,21 +99,31 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter(
         "author",
         openapi.IN_QUERY,
-        description="Поиск по имени автора (частичное совпадение, без учёта регистра)",
+        description=(
+            "Поиск по имени автора (частичное совпадение, без учёта регистра)"
+        ),
         type=openapi.TYPE_STRING,
         required=False,
     ),
     openapi.Parameter(
         "limit",
         openapi.IN_QUERY,
-        description="Максимальное количество отзывов в ответе. Если параметр providers не задан, отзывы выбираются из объединённой выборки по всем провайдерам филиала",
+        description=(
+            "Максимальное количество отзывов в ответе. Если параметр "
+            "providers не задан, отзывы выбираются из объединённой "
+            "выборки по всем провайдерам филиала"
+        ),
         type=openapi.TYPE_INTEGER,
         required=False,
     ),
     openapi.Parameter(
         "pick",
         openapi.IN_QUERY,
-        description="Какие именно limit отзывов взять: latest — самые новые, earliest — самые старые, random — случайные. Если не задано — работают offset/sort как обычная постраничная выдача",
+        description=(
+            "Какие именно limit отзывов взять: latest — самые новые, "
+            "earliest — самые старые, random — случайные. Если не задано "
+            "— работают offset/sort как обычная постраничная выдача"
+        ),
         type=openapi.TYPE_STRING,
         enum=list(PICK_CHOICES),
         required=False,
@@ -112,7 +131,10 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter(
         "sort",
         openapi.IN_QUERY,
-        description="Как расположить отобранные отзывы для показа (по умолчанию newest)",
+        description=(
+            "Как расположить отобранные отзывы для показа "
+            "(по умолчанию newest)"
+        ),
         type=openapi.TYPE_STRING,
         enum=list(SORT_CHOICES),
         required=False,
@@ -120,7 +142,10 @@ REVIEWS_MANUAL_PARAMETERS = [
     openapi.Parameter(
         "filters",
         openapi.IN_QUERY,
-        description="Полный фильтр по полям отзыва — для случаев, не покрытых полями выше",
+        description=(
+            "Полный фильтр по полям отзыва — для случаев, "
+            "не покрытых полями выше"
+        ),
         type=openapi.TYPE_STRING,
         required=False,
     ),
@@ -185,7 +210,9 @@ def get_reviews(request):
 
     data = {
         "branch": BranchResponseSerializer(
-            branch, context={"provider_stats": service_result["provider_stats"]}
+            branch, context={
+                "provider_stats": service_result["provider_stats"]
+            }
         ).data,
         "reviews": reviews_data,
         "offset": service_result["offset"],
@@ -201,12 +228,14 @@ def get_reviews(request):
 )
 @api_view(["GET"])
 def get_organization_reviews(request):
-    """Отзывы по всем филиалам организации, к которой привязан текущий JWT-клиент."""
+    """Отзывы по всем филиалам организации, привязанной к JWT-клиенту."""
     api_client, error = _api_client_or_403(request)
     if error:
         return error
 
-    branches = list(Branch.objects.filter(organization=api_client.organization))
+    branches = list(
+        Branch.objects.filter(organization=api_client.organization)
+    )
 
     try:
         service_result = get_reviews_response_for_branches(
@@ -305,7 +334,7 @@ def get_videos(request):
 )
 @api_view(["GET"])
 def get_organization_videos(request):
-    """Видео по плейлистам организации, к которой привязан текущий JWT-клиент."""
+    """Видео по плейлистам организации, привязанной к JWT-клиенту."""
     api_client, error = _api_client_or_403(request)
     if error:
         return error

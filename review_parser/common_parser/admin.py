@@ -81,8 +81,6 @@ class BranchAdmin(NestedModelAdmin):
     def parsing_yandex(self, request, object_id=None):
 
         parse_yandex_async.delay(object_id)
-        # branch = get_object_or_404(Branch, id=object_id)
-        # create_yandex_reviews(url=branch.yandex_map_url, inn=branch.organization.inn, address=branch.address)
 
         return HttpResponseRedirect(
             reverse_lazy("admin:common_parser_branch_changelist")
@@ -106,7 +104,6 @@ class BranchAdmin(NestedModelAdmin):
 
     def get_urls(self):
         urls = super().get_urls()
-        info = self.model._meta.app_label, self.model._meta.model_name
         my_urls = [
             path(
                 "<path:object_id>/change/parse/",

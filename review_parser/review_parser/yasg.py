@@ -8,16 +8,22 @@ schema_view = get_schema_view(
         title="Review & Video Parser API",
         default_version="v1",
         description="""
-API для парсинга и получения отзывов с различных платформ (Яндекс, 2GIS, VL.RU), а также видео из YouTube-плейлистов.
+API для парсинга и получения отзывов с различных платформ
+(Яндекс, 2GIS, VL.RU), а также видео из YouTube-плейлистов.
 
 Доступ — по JWT-токену: `POST /api/common/token` (логин/пароль клиента) →
-`access`/`refresh`. Токен передаётся в заголовке `Authorization: Bearer <access>`.
+`access`/`refresh`. Токен передаётся в заголовке
+`Authorization: Bearer <access>`.
 
 **Основные эндпоинты:**
-- `GET /api/common/reviews` — отзывы по ID филиала (только если филиал принадлежит организации клиента)
-- `GET /api/common/organization_reviews` — отзывы по всем филиалам организации клиента
-- `GET /api/common/videos` — видео по ID плейлиста (только если плейлист принадлежит организации клиента)
-- `GET /api/common/organization_videos` — видео по всем YouTube-плейлистам организации клиента
+- `GET /api/common/reviews` — отзывы по ID филиала (только если филиал
+  принадлежит организации клиента)
+- `GET /api/common/organization_reviews` — отзывы по всем филиалам
+  организации клиента
+- `GET /api/common/videos` — видео по ID плейлиста (только если плейлист
+  принадлежит организации клиента)
+- `GET /api/common/organization_videos` — видео по всем YouTube-плейлистам
+  организации клиента
 
 **Провайдеры отзывов:** yandex, 2gis, vlru
 **Провайдеры видео:** youtube
