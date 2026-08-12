@@ -63,7 +63,7 @@ def _select_batch(
         "published_date" if pick == "earliest" else "-published_date"
     )
     if limit is not None:
-        sliced = ordered[offset : offset + limit]
+        sliced = ordered[offset: offset + limit]
     elif offset:
         sliced = ordered[offset:]
     else:
