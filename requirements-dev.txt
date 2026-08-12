@@ -4,3 +4,9 @@ ruff==0.16.2
 mypy==2.3.0
 django-stubs==6.0.9
 djangorestframework-stubs==3.17.1
+
+# Для редакторов (например, flake8-расширение VS Code), которые используют
+# именно flake8, а не ruff. Flake8-pyproject нужен, чтобы flake8 читал
+# настройки из pyproject.toml — сам по себе он этого не умеет.
+flake8==7.3.0
+Flake8-pyproject==1.2.4
