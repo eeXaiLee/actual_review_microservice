@@ -22,3 +22,8 @@ django_settings_module = "review_parser.settings"
 max-line-length = 80
 extend-ignore = ["E203"]  # пробел перед ":" в срезах — стиль Black/ruff format
 exclude = ["migrations", "venv"]
+
+[tool.pytest.ini_options]
+pythonpath = ["review_parser"]
+DJANGO_SETTINGS_MODULE = "review_parser.settings"
+testpaths = ["review_parser/common_parser/tests"]

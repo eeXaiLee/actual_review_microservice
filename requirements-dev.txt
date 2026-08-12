@@ -10,3 +10,6 @@ djangorestframework-stubs==3.17.1
 # настройки из pyproject.toml — сам по себе он этого не умеет.
 flake8==7.3.0
 Flake8-pyproject==1.2.4
+
+pytest==9.1.1
+pytest-django==4.14.0
