@@ -21,6 +21,7 @@ def branch_task(func):
     оборачивает результат в {"branch_id", "results"} и ловит Http404/любое
     другое исключение с логированием.
     """
+
     @wraps(func)
     def wrapper(branch_id):
         t0 = perf_counter()
@@ -30,13 +31,14 @@ def branch_task(func):
             logger.info(
                 f"{func.__name__}: завершено, "
                 f"branch_id={branch_id} "
-                f"duration_ms={int((perf_counter()-t0)*1000)}"
+                f"duration_ms={int((perf_counter() - t0) * 1000)}"
             )
             return {"branch_id": branch_id, "results": results}
         except Http404:
             logger.error(f"Филиал не найден (id={branch_id})")
         except Exception as e:
             logger.exception(f"Ошибка в {func.__name__}: {e}")
+
     return wrapper
 
 
@@ -45,6 +47,7 @@ def playlist_task(func):
     Декоратор для Celery-тасок вида `def task(playlist): ...`,
     которые парсят один плейлист по его playlist_id.
     """
+
     @wraps(func)
     def wrapper(playlist_id):
         t0 = perf_counter()
@@ -54,17 +57,18 @@ def playlist_task(func):
             logger.info(
                 f"{func.__name__}: завершено, "
                 f"playlist_id={playlist_id} "
-                f"duration_ms={int((perf_counter()-t0)*1000)}"
+                f"duration_ms={int((perf_counter() - t0) * 1000)}"
             )
             return {"playlist_id": playlist_id, "results": results}
         except Http404:
             logger.error(f"Плейлист не найден (id={playlist_id})")
         except Exception as e:
             logger.exception(f"Ошибка в {func.__name__}: {e}")
+
     return wrapper
 
 
-@shared_task(name='common_parser.tasks.weekly_parsing')
+@shared_task(name="common_parser.tasks.weekly_parsing")
 def weekly_parsing():
     t0 = perf_counter()
     branches = Branch.objects.all()
@@ -73,24 +77,25 @@ def weekly_parsing():
     for branch in branches:
         dict_results[f"{branch.id}"] = parse_all_providers(branch)
 
-    logger.info(f"weekly_parsing: завершено, филиалов={len(dict_results)} "
-                f"duration_ms={int((perf_counter()-t0)*1000)}")
+    logger.info(
+        f"weekly_parsing: завершено, филиалов={len(dict_results)} "
+        f"duration_ms={int((perf_counter() - t0) * 1000)}"
+    )
     return dict_results
 
 
-@shared_task(name='parse_all_providers_async_on_create')
+@shared_task(name="parse_all_providers_async_on_create")
 def parse_all_providers_async_on_create(branch_org_id, branch_address):
     t0 = perf_counter()
     try:
         branch = Branch.objects.get(
-            organization_id=branch_org_id,
-            address=branch_address
+            organization_id=branch_org_id, address=branch_address
         )
         result = parse_all_providers(branch)
         logger.info(
             f"parse_all_providers_async_on_create: завершено, "
             f"branch_id={branch.id} "
-            f"duration_ms={int((perf_counter()-t0)*1000)}"
+            f"duration_ms={int((perf_counter() - t0) * 1000)}"
         )
         return result
     except Branch.DoesNotExist:
@@ -102,13 +107,13 @@ def parse_all_providers_async_on_create(branch_org_id, branch_address):
         logger.exception(f"Ошибка в parse_all_providers_async_on_create: {e}")
 
 
-@shared_task(name='parse_all_providers_async')
+@shared_task(name="parse_all_providers_async")
 @branch_task
 def parse_all_providers_async(branch):
     return parse_all_providers(branch)
 
 
-@shared_task(name='parse_yandex_async')
+@shared_task(name="parse_yandex_async")
 @branch_task
 def parse_yandex_async(branch):
     return create_yandex_reviews(
@@ -118,7 +123,7 @@ def parse_yandex_async(branch):
     )
 
 
-@shared_task(name='parse_vlru_async')
+@shared_task(name="parse_vlru_async")
 @branch_task
 def parse_vlru_async(branch):
     return create_vlru_reviews(
@@ -126,17 +131,17 @@ def parse_vlru_async(branch):
     )
 
 
-@shared_task(name='parse_2gis_async')
+@shared_task(name="parse_2gis_async")
 @branch_task
 def parse_2gis_async(branch):
     return create_2gis_reviews(
         url=branch.twogis_map_url,
         inn=branch.organization.inn,
-        address=branch.address
+        address=branch.address,
     )
 
 
-@shared_task(name='parse_youtube_videos_async')
+@shared_task(name="parse_youtube_videos_async")
 @playlist_task
 def parse_youtube_videos_async(playlist):
     return parse_youtube_videos(playlist.url)

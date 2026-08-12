@@ -38,4 +38,3 @@ def configure_logging() -> None:
     )
 
     _CONFIGURED = True
-

@@ -9,10 +9,18 @@ from .views import (
 )
 
 urlpatterns = [
-    path('token', TokenObtainPairView.as_view(), name='token-obtain'),
-    path('token/refresh', TokenRefreshView.as_view(), name='token-refresh'),
-    path('reviews', get_reviews, name='get-reviews'),
-    path('organization_reviews', get_organization_reviews, name='get-organization-reviews'),
-    path('videos', get_videos, name='get-videos'),
-    path('organization_videos', get_organization_videos, name='get-organization-videos'),
+    path("token", TokenObtainPairView.as_view(), name="token-obtain"),
+    path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
+    path("reviews", get_reviews, name="get-reviews"),
+    path(
+        "organization_reviews",
+        get_organization_reviews,
+        name="get-organization-reviews",
+    ),
+    path("videos", get_videos, name="get-videos"),
+    path(
+        "organization_videos",
+        get_organization_videos,
+        name="get-organization-videos",
+    ),
 ]

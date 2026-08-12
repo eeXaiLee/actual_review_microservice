@@ -7,7 +7,9 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
     """Тесты GET /api/common/reviews (по branch_id)."""
 
     def test_get_reviews_basic_and_pagination(self):
-        resp = self.client.get("/api/common/reviews", {"branch_id": self.branch.id})
+        resp = self.client.get(
+            "/api/common/reviews", {"branch_id": self.branch.id}
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("reviews", resp.data)
 
@@ -28,13 +30,16 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
 
     def test_get_reviews_min_rating_configurable(self):
         # default min_rating=4 hides the rating=3 review
-        resp = self.client.get("/api/common/reviews", {"branch_id": self.branch.id})
+        resp = self.client.get(
+            "/api/common/reviews", {"branch_id": self.branch.id}
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data["reviews"]), 2)
 
         # lowering min_rating brings it back
         resp2 = self.client.get(
-            "/api/common/reviews", {"branch_id": self.branch.id, "min_rating": 1}
+            "/api/common/reviews",
+            {"branch_id": self.branch.id, "min_rating": 1},
         )
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(len(resp2.data["reviews"]), 3)
@@ -64,12 +69,17 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
             },
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(all(float(r["rating"]) > 4 for r in resp.data["reviews"]))
+        self.assertTrue(
+            all(float(r["rating"]) > 4 for r in resp.data["reviews"])
+        )
 
     def test_reviews_rejects_unsupported_filter_field(self):
         resp = self.client.get(
             "/api/common/reviews",
-            {"branch_id": self.branch.id, "filters": "branch__organization__inn=123456789012"},
+            {
+                "branch_id": self.branch.id,
+                "filters": "branch__organization__inn=123456789012",
+            },
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -96,9 +106,13 @@ class ReviewsApiTests(ReviewsFixtureMixin, APITestCase):
 
     def test_get_reviews_requires_authentication(self):
         self.client.force_authenticate(user=None)
-        resp = self.client.get("/api/common/reviews", {"branch_id": self.branch.id})
+        resp = self.client.get(
+            "/api/common/reviews", {"branch_id": self.branch.id}
+        )
         self.assertEqual(resp.status_code, 401)
 
     def test_get_reviews_rejects_foreign_branch(self):
-        resp = self.client.get("/api/common/reviews", {"branch_id": self.other_branch.id})
+        resp = self.client.get(
+            "/api/common/reviews", {"branch_id": self.other_branch.id}
+        )
         self.assertEqual(resp.status_code, 403)

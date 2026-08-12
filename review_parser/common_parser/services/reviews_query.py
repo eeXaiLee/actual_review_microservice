@@ -59,9 +59,11 @@ def _select_batch(
         ids = list(ids_qs[:limit] if limit is not None else ids_qs)
         return Review.objects.filter(pk__in=ids)
 
-    ordered = reviews_qs.order_by("published_date" if pick == "earliest" else "-published_date")
+    ordered = reviews_qs.order_by(
+        "published_date" if pick == "earliest" else "-published_date"
+    )
     if limit is not None:
-        sliced = ordered[offset:offset + limit]
+        sliced = ordered[offset : offset + limit]
     elif offset:
         sliced = ordered[offset:]
     else:
@@ -103,9 +105,13 @@ def _provider_stats(
         f = filtered.get(provider)
         stats[provider] = {
             "review_count": t["cnt"] if t else 0,
-            "review_avg": round(t["avg"], 2) if t and t["avg"] is not None else None,
+            "review_avg": round(t["avg"], 2)
+            if t and t["avg"] is not None
+            else None,
             "review_count_filtered": f["cnt"] if f else 0,
-            "review_avg_filtered": round(f["avg"], 2) if f and f["avg"] is not None else None,
+            "review_avg_filtered": round(f["avg"], 2)
+            if f and f["avg"] is not None
+            else None,
         }
     return stats
 
@@ -207,7 +213,9 @@ def _ordered(qs: QuerySet[Review], *, sort: str) -> QuerySet[Review]:
     return qs.order_by("-published_date")
 
 
-def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_params) -> dict[str, Any]:
+def get_reviews_response_for_branches(
+    *, branches: Iterable[Branch], query_params
+) -> dict[str, Any]:
     branches_list = list(branches)
 
     min_rating = _parse_int(query_params.get("min_rating"))
@@ -235,10 +243,14 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     if limit is not None and limit < 0:
         raise UnsupportedFilterError("limit не может быть отрицательным")
 
-    reviews = Review.objects.filter(branch__in=branches_list, rating__gte=min_rating)
+    reviews = Review.objects.filter(
+        branch__in=branches_list, rating__gte=min_rating
+    )
 
     if providers_raw:
-        providers_list = [p.strip() for p in providers_raw.split(",") if p.strip()]
+        providers_list = [
+            p.strip() for p in providers_raw.split(",") if p.strip()
+        ]
         reviews = reviews.filter(provider__in=providers_list)
 
     if has_photos_raw is not None:
@@ -266,7 +278,7 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     else:
         ordered = _ordered(reviews, sort=sort)
         if limit is not None:
-            page = ordered[offset:offset + limit]
+            page = ordered[offset : offset + limit]
         elif offset:
             page = ordered[offset:]
         else:
@@ -276,7 +288,9 @@ def get_reviews_response_for_branches(*, branches: Iterable[Branch], query_param
     # тянет поле сортировки в GROUP BY и ломает подсчёт (каждая запись
     # оказывается в отдельной "группе"), поэтому пересобираем по ID
     page_ids = list(page.values_list("id", flat=True))
-    provider_stats = _provider_stats(branches_list, Review.objects.filter(pk__in=page_ids))
+    provider_stats = _provider_stats(
+        branches_list, Review.objects.filter(pk__in=page_ids)
+    )
 
     return {
         "reviews": page,

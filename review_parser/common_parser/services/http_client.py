@@ -29,15 +29,18 @@ def get_session() -> requests.Session:
         respect_retry_after_header=True,
     )
 
-    adapter = HTTPAdapter(max_retries=retries, pool_connections=20, pool_maxsize=50)
+    adapter = HTTPAdapter(
+        max_retries=retries, pool_connections=20, pool_maxsize=50
+    )
     session = requests.Session()
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     return session
 
 
-def get(url: str, *, timeout: float | None = None, **kwargs) -> requests.Response:
+def get(
+    url: str, *, timeout: float | None = None, **kwargs
+) -> requests.Response:
     if timeout is None:
         timeout = DEFAULT_TIMEOUT_S
     return get_session().get(url, timeout=timeout, **kwargs)
-

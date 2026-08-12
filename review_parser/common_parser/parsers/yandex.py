@@ -45,7 +45,8 @@ def _scroll_load_all_reviews(page) -> None:
 
         try:
             page.eval_on_selector(
-                ".scroll__container", "el => { el.scrollTop = el.scrollHeight; }"
+                ".scroll__container",
+                "el => { el.scrollTop = el.scrollHeight; }",
             )
         except Exception:
             break
@@ -74,7 +75,9 @@ def _fetch_rendered_html(url: str) -> str:
             )
             _scroll_load_all_reviews(page)
         except Exception:
-            logger.warning(f"Yandex reviews selector not found in time: url={url}")
+            logger.warning(
+                f"Yandex reviews selector not found in time: url={url}"
+            )
         html = page.content()
         browser.close()
         return html
@@ -99,11 +102,15 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
     if stars_block:
         rating_parts = [
             el.get_text(strip=True)
-            for el in stars_block.select(".business-summary-rating-badge-view__rating-text")
+            for el in stars_block.select(
+                ".business-summary-rating-badge-view__rating-text"
+            )
         ]
         if rating_parts:
             rating_text = "".join(rating_parts)
-            rating_text = rating_text.replace("\xa0", "").replace(",", ".").strip()
+            rating_text = (
+                rating_text.replace("\xa0", "").replace(",", ".").strip()
+            )
             try:
                 rating_global = float(rating_text)
             except ValueError:
@@ -123,11 +130,17 @@ def parse(url: str, limit: Optional[int] = None) -> dict:
             if match:
                 avatar_img_url = match.group(1).strip('"')
 
-        author_name_el = review_block.select_one(".business-review-view__author-name")
+        author_name_el = review_block.select_one(
+            ".business-review-view__author-name"
+        )
         author_name = author_name_el.text.strip() if author_name_el else ""
 
-        date_published_el = review_block.select_one(".business-review-view__date")
-        date_published_raw = date_published_el.text.strip() if date_published_el else ""
+        date_published_el = review_block.select_one(
+            ".business-review-view__date"
+        )
+        date_published_raw = (
+            date_published_el.text.strip() if date_published_el else ""
+        )
 
         photos_obj = review_block.select(".business-review-media__item-img")
         image_srcs = []

@@ -12,7 +12,7 @@ class Organization(models.Model):
     inn = models.CharField(max_length=12, null=False, blank=False, unique=True)
 
     def __str__(self):
-        return self.name or f'Организация #{self.id}'
+        return self.name or f"Организация #{self.id}"
 
 
 class ApiClient(models.Model):
@@ -21,24 +21,23 @@ class ApiClient(models.Model):
     получения JWT-токена) с одной организацией. По этому токену клиент
     видит только филиалы и отзывы своей организации.
     """
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='api_client'
+        related_name="api_client",
     )
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name='api_clients'
+        Organization, on_delete=models.CASCADE, related_name="api_clients"
     )
 
     def __str__(self):
-        return f'{self.user.username} → {self.organization}'
+        return f"{self.user.username} → {self.organization}"
 
 
 class Branch(models.Model):
     organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="branches"
+        Organization, on_delete=models.CASCADE, related_name="branches"
     )
     address = models.TextField()
     google_map_url = models.URLField(max_length=1500, null=True, blank=True)
@@ -61,31 +60,33 @@ class Branch(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['organization', 'address'],
-                name='unique_organization_address'
+                fields=["organization", "address"],
+                name="unique_organization_address",
             )
         ]
 
     def __str__(self):
-        return f'{self.id} : {self.organization}: {self.address[:50]}'
+        return f"{self.id} : {self.organization}: {self.address[:50]}"
 
 
 @receiver(post_save, sender=Branch)
 def notify_branch_created(sender, instance, created, **kwargs):
     if created:
         from common_parser.tasks import parse_all_providers_async_on_create
-        on_commit(lambda: parse_all_providers_async_on_create.delay(
-            instance.organization.id, instance.address
-        ))
+
+        on_commit(
+            lambda: parse_all_providers_async_on_create.delay(
+                instance.organization.id, instance.address
+            )
+        )
 
 
 class Review(models.Model):
-
     PROVIDER_CHOICES = [
-        ('yandex', 'Яндекс'),
-        ('google', 'Гугл'),
-        ('2gis', '2GIS'),
-        ('vlru', 'VL.RU')
+        ("yandex", "Яндекс"),
+        ("google", "Гугл"),
+        ("2gis", "2GIS"),
+        ("vlru", "VL.RU"),
     ]
 
     branch = models.ForeignKey(
@@ -107,15 +108,16 @@ class Review(models.Model):
     provider = models.CharField(
         max_length=10,
         choices=PROVIDER_CHOICES,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         db_index=True,
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['branch', 'author', 'content', 'provider'],
-                name='unique_review_per_branch_author_content_provider',
+                fields=["branch", "author", "content", "provider"],
+                name="unique_review_per_branch_author_content_provider",
             )
         ]
 
@@ -124,10 +126,9 @@ class Review(models.Model):
 
 
 class Playlist(models.Model):
-
     PROVIDER_CHOICES = [
-        ('youtube', 'Ютуб'),
-        ('vk', 'Вк'),
+        ("youtube", "Ютуб"),
+        ("vk", "Вк"),
     ]
 
     organization = models.ForeignKey(
@@ -135,16 +136,14 @@ class Playlist(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='playlists'
+        related_name="playlists",
     )
     title = models.CharField(max_length=255, blank=True, null=True)
     count = models.PositiveIntegerField(blank=True, null=True, default=None)
     url = models.URLField(unique=True)
     parse_date = models.DateTimeField(blank=True, null=True)
     provider = models.CharField(
-        max_length=50,
-        choices=PROVIDER_CHOICES,
-        null=True, blank=True
+        max_length=50, choices=PROVIDER_CHOICES, null=True, blank=True
     )
 
     def __str__(self):
@@ -159,7 +158,7 @@ class Video(models.Model):
     preview = models.URLField(max_length=1000, blank=True, null=True)
     duration = models.IntegerField(blank=True, null=True, default=None)
     playlist = models.ForeignKey(
-        Playlist, on_delete=models.CASCADE, related_name='videos'
+        Playlist, on_delete=models.CASCADE, related_name="videos"
     )
 
     def __str__(self):

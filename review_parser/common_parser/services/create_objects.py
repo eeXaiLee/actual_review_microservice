@@ -21,14 +21,14 @@ def create_review(data: dict) -> bool:
     если такой отзыв уже есть, .save() сам упадёт с IntegrityError.
     """
     data_rewiew = {
-                    'branch': data["branch"].id,
-                    'author': data["author"],
-                    'avatar': data["avatar"],
-                    'rating': data["rating"],
-                    'content': data["content"],
-                    'published_date': data["published_date"],
-                    'provider': data['provider']
-                }
+        "branch": data["branch"].id,
+        "author": data["author"],
+        "avatar": data["avatar"],
+        "rating": data["rating"],
+        "content": data["content"],
+        "published_date": data["published_date"],
+        "provider": data["provider"],
+    }
 
     if "photos" in data:
         data_rewiew["photos"] = data["photos"]
@@ -61,10 +61,9 @@ def get_or_create_Organization(inn: str, name: str) -> Organization | None:
             organization.name = name
             organization.save()
     except Organization.DoesNotExist:
-        serializer_org = OrganizationSerializer(data={
-            "inn": inn,
-            "name": name or ""
-        })
+        serializer_org = OrganizationSerializer(
+            data={"inn": inn, "name": name or ""}
+        )
         if serializer_org.is_valid():
             organization = serializer_org.save()
         else:
@@ -79,14 +78,14 @@ def get_or_create_Organization(inn: str, name: str) -> Organization | None:
 
 
 def get_or_create_Branch(
-        organization: Organization,
-        address: str,
-        url_name: str,
-        url: str,
-        review_count_name: str,
-        review_count: str,
-        review_avg_name: str,
-        review_avg: str
+    organization: Organization,
+    address: str,
+    url_name: str,
+    url: str,
+    review_count_name: str,
+    review_count: str,
+    review_avg_name: str,
+    review_avg: str,
 ) -> Branch | None:
     if organization is None:
         logger.warning(
@@ -105,11 +104,13 @@ def get_or_create_Branch(
             setattr(branch, review_avg_name, review_avg)
         branch.save()
     except Branch.DoesNotExist:
-        serializer_branch = BranchSerializer(data={
-            'organization': organization.id,
-            'address': address or "",
-            url_name: url
-        })
+        serializer_branch = BranchSerializer(
+            data={
+                "organization": organization.id,
+                "address": address or "",
+                url_name: url,
+            }
+        )
         if serializer_branch.is_valid():
             branch = serializer_branch.save()
         else:
@@ -124,7 +125,7 @@ def get_or_create_Branch(
 
 
 def get_or_create_playlist(data: dict) -> Playlist | None:
-    playlist_url = data.get('url')
+    playlist_url = data.get("url")
 
     try:
         playlist = Playlist.objects.get(url=playlist_url)

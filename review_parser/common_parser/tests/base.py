@@ -50,11 +50,19 @@ class ReviewsFixtureMixin:
             published_date=timezone.now(),
         )
 
-        cls.user = User.objects.create_user(username="client", password="pass12345")
-        cls.api_client_profile = ApiClient.objects.create(user=cls.user, organization=org)
+        cls.user = User.objects.create_user(
+            username="client", password="pass12345"
+        )
+        cls.api_client_profile = ApiClient.objects.create(
+            user=cls.user, organization=org
+        )
 
-        other_org = Organization.objects.create(inn="987654321098", name="Other Org")
-        cls.other_branch = Branch.objects.create(organization=other_org, address="Other Addr")
+        other_org = Organization.objects.create(
+            inn="987654321098", name="Other Org"
+        )
+        cls.other_branch = Branch.objects.create(
+            organization=other_org, address="Other Addr"
+        )
 
     def setUp(self):
         super().setUp()

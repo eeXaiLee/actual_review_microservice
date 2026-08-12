@@ -12,7 +12,7 @@ from common_parser.services.create_objects import (
     get_or_create_playlist,
 )
 
-YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 
 THUMBNAIL_KEYS_BY_QUALITY = ("maxres", "standard", "high", "medium", "default")
 
@@ -29,10 +29,7 @@ def _get_client():
     global _youtube_client
     if _youtube_client is None:
         _youtube_client = build(
-            "youtube",
-            "v3",
-            developerKey=YOUTUBE_API_KEY,
-            static_discovery=True
+            "youtube", "v3", developerKey=YOUTUBE_API_KEY, static_discovery=True
         )
     return _youtube_client
 
@@ -50,12 +47,16 @@ def get_playlist_videos(playlist_id: str) -> list[dict]:
     next_page_token = None
 
     while True:
-        response = youtube.playlistItems().list(
-            part="snippet",
-            playlistId=playlist_id,
-            maxResults=50,
-            pageToken=next_page_token,
-        ).execute()
+        response = (
+            youtube.playlistItems()
+            .list(
+                part="snippet",
+                playlistId=playlist_id,
+                maxResults=50,
+                pageToken=next_page_token,
+            )
+            .execute()
+        )
 
         items = response.get("items", [])
         video_ids = [
@@ -66,9 +67,11 @@ def get_playlist_videos(playlist_id: str) -> list[dict]:
 
         durations = {}
         if video_ids:
-            video_response = youtube.videos().list(
-                part="contentDetails", id=",".join(video_ids)
-            ).execute()
+            video_response = (
+                youtube.videos()
+                .list(part="contentDetails", id=",".join(video_ids))
+                .execute()
+            )
             durations = {
                 item["id"]: int(
                     isodate.parse_duration(
@@ -86,21 +89,22 @@ def get_playlist_videos(playlist_id: str) -> list[dict]:
 
             thumbnails = snippet.get("thumbnails", {})
             best_key = next(
-                (k for k in THUMBNAIL_KEYS_BY_QUALITY if k in thumbnails),
-                None
+                (k for k in THUMBNAIL_KEYS_BY_QUALITY if k in thumbnails), None
             )
             best_thumbnail = thumbnails.get(best_key, {}) if best_key else {}
 
-            videos.append({
-                "url": f"https://www.youtube.com/watch?v={video_id}",
-                "title": snippet.get("title", ""),
-                "author": snippet.get("channelTitle", ""),
-                # ISO-8601 строка ("...Z") — сериализатор сам разберёт её в
-                # timezone-aware datetime, вручную парсить не нужно.
-                "date": snippet.get("publishedAt"),
-                "preview": best_thumbnail.get("url", ""),
-                "duration": durations.get(video_id, 0),
-            })
+            videos.append(
+                {
+                    "url": f"https://www.youtube.com/watch?v={video_id}",
+                    "title": snippet.get("title", ""),
+                    "author": snippet.get("channelTitle", ""),
+                    # ISO-8601 строка ("...Z") — сериализатор сам разберёт её в
+                    # timezone-aware datetime, вручную парсить не нужно.
+                    "date": snippet.get("publishedAt"),
+                    "preview": best_thumbnail.get("url", ""),
+                    "duration": durations.get(video_id, 0),
+                }
+            )
 
         next_page_token = response.get("nextPageToken")
         if not next_page_token:
@@ -120,9 +124,9 @@ def get_playlist_data(playlist_url: str) -> dict | None:
     youtube = _get_client()
 
     try:
-        playlist_response = youtube.playlists().list(
-            part="snippet", id=playlist_id
-        ).execute()
+        playlist_response = (
+            youtube.playlists().list(part="snippet", id=playlist_id).execute()
+        )
     except HttpError as e:
         logger.error(f"YouTube: ошибка запроса плейлиста {playlist_url}: {e}")
         return None
@@ -179,7 +183,6 @@ def parse_youtube_videos(url: str) -> tuple[int, int] | None:
             cnt += 1
 
     logger.info(
-        f"YouTube create finished: "
-        f"url={url} parsed={len(videos)} created={cnt}"
+        f"YouTube create finished: url={url} parsed={len(videos)} created={cnt}"
     )
     return (len(videos), cnt)
