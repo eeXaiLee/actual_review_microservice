@@ -9,3 +9,13 @@ select = ["E", "F", "W", "I"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.mypy]
+# Мягкий старт: проверяем только то, что типизировано явно, сторонние
+# библиотеки без стабов не считаем ошибкой. Ужесточать по мере готовности.
+plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
+exclude = ["migrations/"]
+
+[tool.django-stubs]
+django_settings_module = "review_parser.settings"
