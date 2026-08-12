@@ -116,6 +116,7 @@ SIMPLE_JWT = {
 
 SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
+    "USE_COMPAT_RENDERERS": False,
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",

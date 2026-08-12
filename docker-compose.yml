@@ -13,6 +13,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,6 +27,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -60,6 +64,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
 
   celery_beat:
     build: .
@@ -73,6 +79,9 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
 
 
 volumes:
