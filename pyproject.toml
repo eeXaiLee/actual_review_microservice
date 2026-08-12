@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+extend-exclude = ["*/migrations/*", "venv"]
+
+[tool.ruff.lint]
+# E/W — pycodestyle, F — pyflakes, I — сортировка импортов (замена isort).
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
