@@ -3,8 +3,8 @@
 Сервис для сбора отзывов с Яндекс.Карт, 2GIS и VL.RU, а также видео из YouTube-плейлистов.
 
 **Ссылки:**
-- Swagger (документация API): http://185.104.113.137:8000/swagger/
-- Админ-панель: http://185.104.113.137:8000/admin
+- Swagger (документация API): https://v3212274.hosted-by-vdsina.ru/swagger/
+- Админ-панель: https://v3212274.hosted-by-vdsina.ru/admin
 
 ## Переменные окружения
 
@@ -53,7 +53,7 @@ https://www.vl.ru/art-mesh
 	- в админке создаём пользователя (Users) с логином/паролем для клиента;
 	- создаём объект `ApiClient`, привязываем к нему этого пользователя и организацию, отзывы которой клиенту можно видеть.
 6.	Клиент получает токен: `POST /api/common/token` с телом `{"username": "...", "password": "..."}` → `{"access": "...", "refresh": "..."}`. Дальше каждый запрос к API отзывов идёт с заголовком `Authorization: Bearer <access>`. Токен `access` живёт 12 часов, `refresh` — 30 дней (`POST /api/common/token/refresh` с `{"refresh": "..."}` → новый `access`).
-7.	Документация по получению данных через API: http://185.104.113.137:8000/swagger/
+7.	Документация по получению данных через API: https://v3212274.hosted-by-vdsina.ru/swagger/
 
 **Эндпоинты (везде нужен заголовок `Authorization: Bearer <access>`):**
 - `POST /api/common/token` — получить токен по логину/паролю
