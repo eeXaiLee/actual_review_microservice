@@ -128,6 +128,7 @@ SWAGGER_SETTINGS = {
 
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR.parent / "static"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

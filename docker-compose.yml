@@ -1,14 +1,11 @@
-version: '3.8'
-
 services:
   web:
     build: .
-    command: python review_parser/manage.py runserver 0.0.0.0:8000
+    command: gunicorn review_parser.wsgi:application --chdir review_parser --bind 0.0.0.0:8000 --workers 3
     working_dir: /code/review_parser
     volumes:
       - .:/code/review_parser
-    ports:
-      - "8000:8000"
+      - static_data:/code/review_parser/static
     env_file:
       - .env
     environment:
@@ -18,6 +15,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - static_data:/code/review_parser/static:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    restart: unless-stopped
 
   postgres:
     image: postgres:17-alpine
@@ -27,8 +36,6 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,6 +43,7 @@ services:
       interval: 5s
       timeout: 2s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:latest
@@ -47,6 +55,7 @@ services:
       interval: 5s
       timeout: 2s
       retries: 3
+    restart: unless-stopped
 
   celery:
     build: .
@@ -66,6 +75,7 @@ services:
       - PYTHONUNBUFFERED=1
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+    restart: unless-stopped
 
   celery_beat:
     build: .
@@ -82,8 +92,10 @@ services:
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+    restart: unless-stopped
 
 
 volumes:
   redis_data:
   postgres_data:
+  static_data:
