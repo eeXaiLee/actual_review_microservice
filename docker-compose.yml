@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    image: actual_review_microservice:latest
     command: gunicorn review_parser.wsgi:application --chdir review_parser --bind 0.0.0.0:8000 --workers 3
     working_dir: /code/review_parser
     volumes:
@@ -59,6 +60,7 @@ services:
 
   celery:
     build: .
+    image: actual_review_microservice:latest
     command: celery -A review_parser worker --loglevel=info --pool=solo --concurrency=1
     volumes:
       - .:/code
@@ -79,6 +81,7 @@ services:
 
   celery_beat:
     build: .
+    image: actual_review_microservice:latest
     command: celery -A review_parser beat --loglevel=info
     volumes:
       - .:/code
