@@ -59,7 +59,6 @@ services:
     restart: unless-stopped
 
   celery:
-    build: .
     image: actual_review_microservice:latest
     command: celery -A review_parser worker --loglevel=info --pool=solo --concurrency=1
     volumes:
@@ -80,7 +79,6 @@ services:
     restart: unless-stopped
 
   celery_beat:
-    build: .
     image: actual_review_microservice:latest
     command: celery -A review_parser beat --loglevel=info
     volumes:
