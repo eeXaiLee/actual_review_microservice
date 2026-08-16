@@ -1,0 +1,82 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: review_parser
+          POSTGRES_USER: review_parser
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U review_parser -d review_parser"
+          --health-interval 5s
+          --health-timeout 2s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-test-secret-key
+      DEBUG: "False"
+      ALLOWED_HOSTS: 127.0.0.1
+      POSTGRES_DB: review_parser
+      POSTGRES_USER: review_parser
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://localhost:6379/0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements-dev.txt
+
+      - run: ruff check .
+      - run: ruff format --check .
+
+      - run: mypy review_parser
+        env:
+          PYTHONPATH: review_parser
+
+      - run: pytest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H v3212274.hosted-by-vdsina.ru >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key user1@v3212274.hosted-by-vdsina.ru '
+            set -e
+            cd /opt/actual_review_microservice
+            git pull
+            docker compose -f docker-compose.yml build
+            docker compose -f docker-compose.yml up -d
+            docker compose -f docker-compose.yml exec -T web python review_parser/manage.py migrate
+            docker compose -f docker-compose.yml exec -T web python review_parser/manage.py collectstatic --noinput
+            docker compose -f docker-compose.yml exec nginx nginx -s reload
+            docker builder prune -a -f
+          '
