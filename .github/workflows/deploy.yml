@@ -79,5 +79,5 @@ jobs:
             docker compose -f docker-compose.yml exec -T web python review_parser/manage.py migrate
             docker compose -f docker-compose.yml exec -T web python review_parser/manage.py collectstatic --noinput
             docker compose -f docker-compose.yml exec nginx nginx -s reload
-            docker builder prune -f
+            docker builder prune -a -f
           '
