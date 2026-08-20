@@ -23,20 +23,11 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - static_data:/code/review_parser/static:ro
-      - certbot_certs:/etc/letsencrypt:ro
-      - certbot_webroot:/var/www/certbot:ro
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8001:80"
     depends_on:
       - web
     restart: unless-stopped
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - certbot_certs:/etc/letsencrypt
-      - certbot_webroot:/var/www/certbot
 
   postgres:
     image: postgres:17-alpine
@@ -109,5 +100,3 @@ volumes:
   redis_data:
   postgres_data:
   static_data:
-  certbot_certs:
-  certbot_webroot:
